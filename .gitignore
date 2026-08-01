@@ -24,3 +24,12 @@ supabase/.temp/
 # Local logs
 *.log
 npm-debug.log*
+
+# Codex local files
+/.codex-remote-attachments/
+
+# Agent scratch space
+/.agent-tmp/
+
+# Machine-local project context
+/docs/project-context.local.md
