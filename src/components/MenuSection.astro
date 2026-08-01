@@ -20,6 +20,6 @@ const { category, items, sectionNumber } = Astro.props;
   </header>
 
   <div class="menu-section__items">
-    {items.map((item) => <MenuItemRow item={item} />)}
+    {items.map((item, index) => <MenuItemRow item={item} showPriceLabels={index === 0} />)}
   </div>
 </section>

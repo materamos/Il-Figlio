@@ -4,9 +4,10 @@ import { priceKindLabels } from "../domain/menu-config";
 
 interface Props {
   item: MenuItem;
+  showPriceLabels: boolean;
 }
 
-const { item } = Astro.props;
+const { item, showPriceLabels } = Astro.props;
 const currency = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -33,7 +34,9 @@ const currency = new Intl.NumberFormat("es-AR", {
   <dl class="menu-item__prices price-figures" aria-label={`Precios de ${item.name}`}>
     {item.prices.map((price) => (
       <div class="menu-item__price">
-        <dt>{priceKindLabels[price.kind]}</dt>
+        <dt class:list={{ "sr-only": !showPriceLabels }}>
+          {priceKindLabels[price.kind]}
+        </dt>
         <dd>{currency.format(price.amount)}</dd>
       </div>
     ))}
