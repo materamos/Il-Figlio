@@ -255,10 +255,6 @@
   text-transform: uppercase;
 }
 
-.menu-section__items {
-  border-top: 1px solid var(--color-border);
-}
-
 .menu-item {
   display: grid;
   gap: var(--space-3);
