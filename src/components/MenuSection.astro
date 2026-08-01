@@ -1,5 +1,6 @@
 ---
 import type { MenuCategoryDefinition, MenuItem } from "../types/menu";
+import { priceKindLabels } from "../domain/menu-config";
 import MenuItemRow from "./MenuItemRow.astro";
 
 interface Props {
@@ -17,9 +18,14 @@ const { category, items, sectionNumber } = Astro.props;
       {String(sectionNumber).padStart(2, "0")}
     </p>
     <h2 class="menu-section__title" id={`${category.id}-title`}>{category.name}</h2>
+    <div class="menu-section__price-headings price-figures" aria-label={`Tipos de precio de ${category.name}`}>
+      {category.allowedPriceKinds.map((kind) => (
+        <span class="menu-section__price-heading">{priceKindLabels[kind]}</span>
+      ))}
+    </div>
   </header>
 
   <div class="menu-section__items">
-    {items.map((item, index) => <MenuItemRow item={item} showPriceLabels={index === 0} />)}
+    {items.map((item) => <MenuItemRow item={item} />)}
   </div>
 </section>
