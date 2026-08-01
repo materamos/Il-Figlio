@@ -4,12 +4,19 @@ Carta QR y landing minimalista para Il Figlio, con un administrador privado y ac
 
 ## Estado del proyecto
 
-La aplicación está preparada para desarrollarse y validarse con datos locales. La creación de los proyectos remotos de Supabase y Vercel, sus credenciales, el dominio y el QR definitivo quedan deliberadamente pendientes hasta la activación.
+La implementación técnica tiene un entorno remoto activo:
+
+- Sitio público: [https://il-figlio.vercel.app](https://il-figlio.vercel.app).
+- Backend remoto de Supabase con migración, Auth, función de publicación y credencial privada de build activas.
+- Administrador privado disponible para edición y publicación.
+
+El dominio propio, el QR definitivo y la transferencia al cliente permanecen pendientes. La propiedad, el consentimiento, los respaldos y la operación privada se registran fuera de este repositorio; no se publican aquí identidades ni secretos.
 
 Documentación principal:
 
 - [Arquitectura](docs/architecture.md)
-- [Activación de Supabase y Vercel](docs/activation.md)
+- [Activación, operación y transferencia remota](docs/activation.md)
+- [Estado remoto y operación de Supabase](docs/supabase/README.md)
 - [Sistema de diseño](design-system/il-figlio/MASTER.md)
 
 ## Requisitos

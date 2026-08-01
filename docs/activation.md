@@ -1,8 +1,31 @@
-# Activación remota
+# Activación, operación y transferencia remota
 
-Este runbook se ejecuta únicamente cuando existan los proyectos remotos de Supabase y Vercel. Hasta entonces, desarrollo, migraciones, pruebas y build deben funcionar en local con fixture y Supabase local. No pegues secretos en commits, issues ni logs.
+Este runbook es reutilizable para el entorno remoto actual y para crear un entorno nuevo. El entorno técnico actual tiene estado `activo` al 2026-08-01; el dominio propio, el QR definitivo y la transferencia al cliente tienen estado `pendiente`. No pegues secretos en commits, issues ni logs.
 
-## 1. Validación local previa
+Las operaciones que crean, modifican o publican recursos remotos requieren autorización explícita y registro del resultado. Las comprobaciones locales y las lecturas de estado no sustituyen esa autorización.
+
+## 1. Elegir la ruta
+
+### Entorno remoto actual — estado `activo`
+
+El sitio técnico publicado es [https://il-figlio.vercel.app](https://il-figlio.vercel.app). El proyecto remoto de Supabase cuenta con la migración, Auth, el administrador, la credencial privada de build y la Edge Function de publicación activas. No vuelvas a crear usuarios, secretos, proyectos ni Deploy Hooks en este entorno: utiliza las secciones de aceptación, publicación, rollback y operación para verificarlo o cambiarlo con autorización.
+
+### Entorno nuevo — estado `pendiente`
+
+Utiliza las secciones de provisioning de Supabase, Auth, Vercel y la Edge Function. Los valores reales de proyecto, identidades y secretos deben permanecer en sus gestores o consolas; este repositorio solo conserva nombres, contratos y ejemplos no utilizables.
+
+### Impacto de las operaciones
+
+| Operación | Efecto | Autorización |
+| --- | --- | --- |
+| `supabase link`, `supabase db push` o cambios de migración | Vincula el checkout o modifica el backend remoto. | Requerida |
+| Crear/reemplazar el usuario Auth o la allowlist | Cambia el acceso administrativo. | Requerida |
+| Crear variables, secretos, Deploy Hooks o desplegar la Function | Cambia credenciales o publicación remota. | Requerida |
+| Crear/promover/retirar un deployment de Vercel | Cambia lo que sirve la URL pública. | Requerida |
+| Conectar dominio, redirects o QR | Cambia rutas públicas y material impreso. | Requerida |
+| Consultar estados, logs sin secretos o la URL publicada | No muta el servicio, pero debe quedar registrado como evidencia. | No muta; registrar |
+
+## 2. Validación local previa
 
 Desde un checkout limpio:
 
@@ -33,7 +56,7 @@ npm run supabase:stop -- --no-backup
 
 No continúes si una migración no reconstruye la base desde cero o si falla una política/RPC.
 
-## 2. Crear y vincular Supabase
+## 3. Crear y vincular Supabase
 
 1. Crear un proyecto en la organización correcta y guardar su `project ref` en el gestor de secretos.
 2. Elegir una región cercana a Argentina y una contraseña de base única.
@@ -64,7 +87,7 @@ No continúes si una migración no reconstruye la base desde cero o si falla una
 
 La conexión utilizada por Vercel debe ser esa credencial de lectura de build. No reutilices `postgres`, el service role ni un propietario de esquema para `SUPABASE_DB_URL`.
 
-## 3. Configurar Auth y el único administrador
+## 4. Configurar Auth y el único administrador
 
 1. En Supabase Auth, deshabilitar el registro público.
 2. Configurar Site URL y redirects exclusivamente para el dominio productivo y las previews autorizadas.
@@ -84,7 +107,7 @@ La conexión utilizada por Vercel debe ser esa credencial de lectura de build. N
 
 No se crea una interfaz de invitaciones ni gestión de usuarios.
 
-## 4. Crear el proyecto Vercel
+## 5. Crear el proyecto Vercel
 
 1. Importar el repositorio de GitHub sin desplegar todavía a producción.
 2. Seleccionar Node.js `22.x`, framework Astro y directorio de salida `dist`.
@@ -104,7 +127,7 @@ No se crea una interfaz de invitaciones ni gestión de usuarios.
 
 Las previews remotas también deben leer Supabase o quedar deshabilitadas; el fixture no es una fuente publicable.
 
-## 5. Conectar la publicación
+## 6. Conectar la publicación
 
 1. Crear un Deploy Hook de Vercel limitado al branch productivo.
 2. Guardarlo directamente como secreto de la Edge Function:
@@ -130,7 +153,7 @@ Las previews remotas también deben leer Supabase o quedar deshabilitadas; el fi
 
 El hook es rotativo: si aparece en un log o lugar no confiable, revocarlo en Vercel y actualizar el secreto de Supabase.
 
-## 6. Primer despliegue
+## 7. Aceptación funcional y verificación de publicación
 
 1. Ejecutar el build con el snapshot remoto y revisar la revisión editorial embebida:
 
@@ -157,7 +180,14 @@ El hook es rotativo: si aparece en un log o lugar no confiable, revocarlo en Ver
 5. Inspeccionar headers, especialmente CSP, HSTS y `X-Robots-Tag` de `/admin/`.
 6. Promover a producción solo después de completar el checklist.
 
-## 7. Dominio y QR
+La aceptación funcional exige registrar el resultado de cada punto, sin copiar
+credenciales, correos ni valores privados. Una solicitud `publish_queued` solo
+demuestra que el hook aceptó la petición: no demuestra que el deployment ya
+esté servido. La publicación queda aceptada únicamente cuando la revisión
+embebida en la aplicación publicada coincide con `current_revision` y la URL
+pública responde con la carta esperada.
+
+## 8. Dominio y QR
 
 1. Vincular el dominio definitivo y esperar HTTPS válido.
 2. Actualizar `PUBLIC_SITE_URL` y los redirects de Auth.
@@ -165,7 +195,7 @@ El hook es rotativo: si aparece en un log o lugar no confiable, revocarlo en Ver
 4. Generar el QR contra la URL definitiva (`/` o `/#carta`), nunca contra una preview.
 5. Probar el QR impreso con iOS y Android antes de producir cartelería.
 
-## 8. Rollback y operación
+## 9. Rollback y operación
 
 - Un cambio editorial incorrecto se corrige en el admin y se vuelve a publicar; mientras tanto puede marcarse el sabor agotado.
 - Un producto archivado se restaura, se publica y recién después se habilita.
@@ -174,3 +204,28 @@ El hook es rotativo: si aparece en un log o lugar no confiable, revocarlo en Ver
 - Rotar periódicamente contraseña del usuario, conexión privada de build y Deploy Hook.
 
 Registrar fecha, responsable y resultado de cada activación o rotación sin copiar valores secretos.
+
+## 10. Transferencia
+
+La transferencia es una secuencia independiente de la activación técnica. El
+runbook privado conserva la autoridad sobre propietarios, consentimiento,
+backups, evidencias y aceptación administrativa.
+
+1. Preparar las cuentas del cliente y confirmar que puede acceder a GitHub,
+   Supabase, Vercel y al registrador del dominio.
+2. Congelar cambios, generar y verificar el backup externo de Supabase y
+   conservar una referencia de la última versión conocida.
+3. Transferir los recursos y permisos acordados, sin mover secretos en texto
+   plano ni dejar accesos personales innecesarios.
+4. Validar primero el sitio en `https://il-figlio.vercel.app`, incluyendo menú,
+   login administrativo, edición, operación inmediata y publicación.
+5. Conectar el dominio propio, actualizar redirects y generar el QR definitivo
+   solo cuando el dominio responda con HTTPS válido.
+6. Rotar o revocar credenciales y accesos anteriores; conservar únicamente el
+   acceso técnico expresamente acordado.
+7. Confirmar que el cliente puede editar, publicar, comprobar un deployment y
+   ejecutar la recuperación documentada sin asistencia.
+
+Cada paso con efecto remoto requiere autorización y un registro operativo. Si
+alguna comprobación queda en estado `no verificado`, la transferencia no se
+considera aceptada.

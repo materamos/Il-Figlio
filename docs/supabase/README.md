@@ -1,11 +1,28 @@
 # Supabase de Il Figlio
 
-Este directorio documenta el backend local y el procedimiento para activarlo
-en un proyecto remoto. La migración canónica es
+Este directorio documenta el backend local, el estado remoto y el procedimiento
+para crear un entorno nuevo. La migración canónica es
 `supabase/migrations/20260801000000_initial_menu_backend.sql`.
 
-La activación remota, la creación del usuario Auth, el alta de credenciales y
-el deploy de la Edge Function quedan deliberadamente fuera de la migración.
+La migración es reproducible y no contiene secretos. La activación remota, las
+identidades, las credenciales, la propiedad y las evidencias operativas se
+mantienen fuera del repositorio.
+
+## Estado remoto y operación
+
+Al 2026-08-01, el entorno remoto de Il Figlio tiene estado `activo`:
+
+- la migración canónica está aplicada;
+- Supabase Auth está habilitado con el registro público desactivado;
+- existe un único administrador para el negocio;
+- la credencial privada de build de solo lectura está creada;
+- la Edge Function `publish-menu-changes` está desplegada y configurada para
+  publicar mediante el flujo validado.
+
+El sitio técnico publicado es [https://il-figlio.vercel.app](https://il-figlio.vercel.app).
+Los secretos, las identidades concretas y las evidencias de prueba no se
+documentan aquí. No repitas el provisioning ni ejecutes mutaciones en el
+proyecto activo sin autorización explícita.
 
 ## Arquitectura y límites
 
@@ -329,7 +346,10 @@ psql "$SUPABASE_AUDIT_DB_URL" \
 El archivo comienza con `BEGIN READ ONLY` y cada consulta debe devolver cero
 filas. La suite pgTAP se ejecuta únicamente sobre una base local descartable.
 
-## Activación remota pendiente
+## Provisioning de un entorno nuevo
+
+Esta secuencia conserva los pasos necesarios para un entorno cuyo estado sea
+`pendiente`; no es una orden para modificar el entorno remoto actual.
 
 1. Crear y vincular el proyecto Supabase.
 2. Revisar que `public` sea el único schema expuesto por Data API.
