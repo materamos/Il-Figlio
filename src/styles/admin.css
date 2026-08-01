@@ -109,21 +109,19 @@
 }
 
 .admin-body:has(.admin-auth-panel:not([hidden])) {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   height: 100dvh;
-  grid-template-rows: auto minmax(0, 1fr);
-  overflow: hidden;
 }
 
-/* The grid assigns the exact space remaining after the header to the access
-   flow, avoiding viewport-height arithmetic and its rounding overflow. */
+/* The access flow uses the remaining viewport height when it fits; otherwise
+   its natural height extends the document, preserving page-level scrolling. */
 .admin-shell:has(.admin-auth-panel:not([hidden])) {
   display: grid;
-  min-height: 0;
+  flex: 1 1 auto;
   align-content: safe center;
-  overflow-y: auto;
   padding-block: max(var(--space-4), env(safe-area-inset-top))
-    max(var(--space-12), env(safe-area-inset-bottom));
+    max(var(--space-4), env(safe-area-inset-bottom));
 }
 
 .admin-shell:has(.admin-auth-panel:not([hidden])) .admin-auth-panel:not([hidden]) {
