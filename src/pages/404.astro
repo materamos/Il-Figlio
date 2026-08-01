@@ -1,0 +1,54 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import BrandMark from "../components/BrandMark.astro";
+---
+
+<BaseLayout
+  title="Página no encontrada | Il Figlio"
+  description="La página que buscás no existe."
+  robots="noindex, follow"
+>
+  <main id="main-content" class="not-found">
+    <BrandMark class="not-found__mark" size={1080} />
+    <p class="not-found__code">404</p>
+    <h1>Esta página no está en la carta.</h1>
+    <p>Volvé al inicio para ver el menú actualizado de Il Figlio.</p>
+    <a class="button button--primary" href="/">Ver la carta</a>
+  </main>
+</BaseLayout>
+
+<style>
+  .not-found {
+    display: grid;
+    width: min(100% - 2rem, 42rem);
+    min-height: 100dvh;
+    place-content: center;
+    justify-items: start;
+    gap: var(--space-4);
+    margin-inline: auto;
+    padding-block: var(--space-12);
+  }
+
+  .not-found__mark {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .not-found__code {
+    margin: 0;
+    color: var(--color-action);
+    font-weight: 750;
+    letter-spacing: 0.12em;
+  }
+
+  .not-found h1 {
+    max-width: 12ch;
+    margin-bottom: 0;
+    font-size: clamp(2.5rem, 10vw, 5.5rem);
+  }
+
+  .not-found p:not(.not-found__code) {
+    max-width: 34rem;
+    color: var(--color-muted-ink);
+  }
+</style>

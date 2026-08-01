@@ -1,0 +1,26 @@
+# Dependencies and generated output
+node_modules/
+dist/
+.astro/
+coverage/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Hosting and local services
+.vercel/
+supabase/.branches/
+supabase/.temp/
+
+# Editors and operating systems
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Local logs
+*.log
+npm-debug.log*

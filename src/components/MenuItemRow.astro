@@ -1,0 +1,41 @@
+---
+import type { MenuItem } from "../types/menu";
+import { priceKindLabels } from "../domain/menu-config";
+
+interface Props {
+  item: MenuItem;
+}
+
+const { item } = Astro.props;
+const currency = new Intl.NumberFormat("es-AR", {
+  style: "currency",
+  currency: "ARS",
+  maximumFractionDigits: 0,
+});
+---
+
+<article
+  class="menu-item"
+  data-menu-item
+  data-item-id={item.id}
+  data-availability="unknown"
+>
+  <div class="menu-item__content">
+    <div class="menu-item__heading-row">
+      <h3 class="menu-item__name">{item.name}</h3>
+      <span class="menu-item__availability" data-availability-label>
+        A confirmar
+      </span>
+    </div>
+    {item.description && <p class="menu-item__description">{item.description}</p>}
+  </div>
+
+  <dl class="menu-item__prices price-figures" aria-label={`Precios de ${item.name}`}>
+    {item.prices.map((price) => (
+      <div class="menu-item__price">
+        <dt>{priceKindLabels[price.kind]}</dt>
+        <dd>{currency.format(price.amount)}</dd>
+      </div>
+    ))}
+  </dl>
+</article>

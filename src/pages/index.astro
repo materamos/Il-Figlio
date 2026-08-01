@@ -1,0 +1,178 @@
+---
+import "../styles/menu.css";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import BrandMark from "../components/BrandMark.astro";
+import InstagramIcon from "../components/InstagramIcon.astro";
+import LocationIcon from "../components/LocationIcon.astro";
+import MenuSection from "../components/MenuSection.astro";
+import PhoneIcon from "../components/PhoneIcon.astro";
+import WhatsAppIcon from "../components/WhatsAppIcon.astro";
+import { ilFiglioBusiness } from "../data";
+import { loadMenuContent } from "../utils/menuContent";
+
+const content = await loadMenuContent();
+const categories = [...content.categories].sort((a, b) => a.orderIndex - b.orderIndex);
+const itemsByCategory = new Map(
+  categories.map((category) => [
+    category.id,
+    content.items
+      .filter((item) => item.categoryId === category.id)
+      .sort((a, b) => a.orderIndex - b.orderIndex),
+  ]),
+);
+const whatsappHref = `https://wa.me/${ilFiglioBusiness.contact.whatsappE164}?text=${encodeURIComponent(
+  ilFiglioBusiness.contact.whatsappDefaultMessage,
+)}`;
+const phoneHref = "tel:+541144097322";
+const instagramHref = `https://www.instagram.com/${ilFiglioBusiness.contact.instagramHandle}/`;
+const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+  ilFiglioBusiness.address.display,
+)}`;
+const publicSupabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+---
+
+<BaseLayout
+  title="Il Figlio | Pizza al molde en Lanús Oeste"
+  description="Pizza al molde abundante, crocante y jugosa. Consultá el menú y hacé tu pedido por WhatsApp."
+  bodyClass="menu-body"
+>
+  <main
+    class="menu-page"
+    id="main-content"
+    data-menu-page
+    data-supabase-url={publicSupabaseUrl}
+    data-supabase-anon-key={publicSupabaseAnonKey}
+  >
+    <header class="site-header" aria-label="Encabezado principal">
+      <a class="site-header__brand" href="#inicio" aria-label="Il Figlio, volver al inicio">
+        <BrandMark class="site-header__mark" decorative={true} size={1080} />
+        <span class="site-header__name">IL FIGLIO</span>
+      </a>
+      <a class="site-header__contact" href={phoneHref}>
+        {ilFiglioBusiness.contact.phoneDisplay}
+      </a>
+    </header>
+
+    <section class="hero" id="inicio" aria-labelledby="hero-title">
+      <div class="hero__copy">
+        <p class="hero__eyebrow">Pizzería de barrio · Lanús Oeste</p>
+        <h1 class="hero__title" id="hero-title">Il Figlio</h1>
+        <p class="hero__lede">
+          Pizza al molde abundante, crocante y jugosa. Abrimos los fines de semana.
+        </p>
+      </div>
+
+      <div
+        class="runtime-status"
+        data-business-status
+        data-tone="neutral"
+        aria-live="polite"
+      >
+        <p class="runtime-status__label">
+          <span class="runtime-status__dot" aria-hidden="true"></span>
+          <span data-business-status-label>Consultando disponibilidad</span>
+        </p>
+        <p class="runtime-status__detail" data-business-status-detail>
+          Antes de pedir, confirmamos el estado actual de la producción.
+        </p>
+      </div>
+
+      <div class="hero__actions">
+        <a
+          class="button button--primary"
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-whatsapp-link
+          data-default-label="Pedir por WhatsApp"
+          data-unavailable-label="Consultar por WhatsApp"
+        >
+          <WhatsAppIcon />
+          <span data-whatsapp-label>Consultar por WhatsApp</span>
+        </a>
+        <a class="button button--secondary" href="#carta">Ver la carta</a>
+      </div>
+    </section>
+
+    <div class="menu-index-wrap">
+      <nav class="menu-index" aria-label="Categorías de la carta">
+        <ul class="menu-index__list">
+          {categories.map((category) => (
+            <li>
+              <a class="menu-index__link" href={`#${category.id}`}>{category.name}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+
+    <div class="menu-content" id="carta">
+      <header class="menu-intro">
+        <p class="section-eyebrow">Nuestra carta</p>
+        <h2 class="menu-intro__title">Elegí tu favorita</h2>
+        <p class="menu-intro__copy">
+          Los productos agotados permanecen visibles para que conozcas toda nuestra propuesta.
+          Confirmá disponibilidad y tiempos por WhatsApp.
+        </p>
+      </header>
+
+      {categories.map((category, index) => (
+        <MenuSection
+          category={category}
+          items={itemsByCategory.get(category.id) ?? []}
+          sectionNumber={index + 1}
+        />
+      ))}
+
+      <aside class="menu-rules" aria-labelledby="menu-rules-title">
+        <h2 id="menu-rules-title">Para tener en cuenta</h2>
+        <p>{ilFiglioBusiness.rules.halfAndHalf}</p>
+        <p>Los precios y la disponibilidad se confirman al momento de hacer el pedido.</p>
+      </aside>
+    </div>
+
+    <section class="contact-section" aria-labelledby="contact-title">
+      <div class="contact-section__inner">
+        <div>
+          <p class="section-eyebrow">Contacto</p>
+          <h2 class="contact-section__title" id="contact-title">Tu próxima pizza empieza acá.</h2>
+        </div>
+
+        <ul class="contact-list">
+          <li>
+            <a href={whatsappHref} target="_blank" rel="noopener noreferrer" data-whatsapp-link>
+              <WhatsAppIcon />
+              <span data-whatsapp-label>WhatsApp {ilFiglioBusiness.contact.phoneDisplay}</span>
+            </a>
+          </li>
+          <li>
+            <a href={phoneHref}>
+              <PhoneIcon />
+              <span>Llamar al {ilFiglioBusiness.contact.phoneDisplay}</span>
+            </a>
+          </li>
+          <li>
+            <a href={mapHref} target="_blank" rel="noopener noreferrer">
+              <LocationIcon />
+              <span>{ilFiglioBusiness.address.display}</span>
+            </a>
+          </li>
+          <li>
+            <a href={instagramHref} target="_blank" rel="noopener noreferrer">
+              <InstagramIcon />
+              <span>@{ilFiglioBusiness.contact.instagramHandle}</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <p>© {new Date().getFullYear()} Il Figlio</p>
+      <p>Pizza al molde · Lanús Oeste</p>
+    </footer>
+  </main>
+
+  <script is:inline type="module" src="/scripts/menu-runtime-state.js"></script>
+</BaseLayout>

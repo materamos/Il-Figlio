@@ -1,0 +1,40 @@
+project_id = "il-figlio"
+
+[api]
+enabled = true
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+major_version = 17
+
+[db.seed]
+enabled = false
+
+[auth]
+enabled = true
+site_url = "http://localhost:4321"
+additional_redirect_urls = [
+  "http://localhost:4321/admin/",
+]
+enable_signup = false
+minimum_password_length = 10
+password_requirements = "letters_digits"
+
+[auth.email]
+# Keep the email provider enabled for login/recovery. Global auth.enable_signup
+# remains false, so public account creation is still disabled.
+enable_signup = true
+enable_confirmations = true
+double_confirm_changes = true
+secure_password_change = true
+max_frequency = "1m0s"
+otp_length = 8
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[functions.publish-menu-changes]
+verify_jwt = false

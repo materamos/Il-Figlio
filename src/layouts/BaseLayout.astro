@@ -1,0 +1,46 @@
+---
+import "@fontsource-variable/karla/wght.css";
+import "@fontsource-variable/playfair-display/wght.css";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+  bodyClass?: string;
+  robots?: string;
+}
+
+const {
+  title,
+  description,
+  bodyClass = "",
+  robots,
+} = Astro.props;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+const socialImageUrl = new URL("/brand/il-figlio-mark.png", Astro.site ?? Astro.url.origin);
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="description" content={description} />
+    {robots && <meta name="robots" content={robots} />}
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={socialImageUrl} />
+    <link rel="icon" type="image/png" href="/brand/il-figlio-mark.png" />
+    <link rel="apple-touch-icon" href="/brand/il-figlio-mark.png" />
+    <title>{title}</title>
+  </head>
+  <body class={bodyClass}>
+    <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
+    <slot />
+  </body>
+</html>

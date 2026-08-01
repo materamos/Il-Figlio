@@ -1,0 +1,408 @@
+---
+import BrandMark from "../../components/BrandMark.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { loadMenuContent } from "../../utils/menuContent";
+import "../../styles/admin.css";
+
+const menuContent = await loadMenuContent();
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? "";
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? "";
+---
+
+<BaseLayout
+  title="Administración | Il Figlio"
+  description="Panel privado de administración de Il Figlio."
+  bodyClass="admin-body"
+  robots="noindex, nofollow, noarchive"
+>
+  <header class="admin-header">
+    <a class="admin-brand" href="/" aria-label="Volver al menú de Il Figlio">
+      <BrandMark class="admin-brand__mark" decorative={true} size={64} />
+      <span>
+        <strong>Il Figlio</strong>
+        <small>Administración</small>
+      </span>
+    </a>
+    <a class="admin-header__menu-link" href="/" target="_blank" rel="noopener">
+      Ver menú
+    </a>
+  </header>
+
+  <main
+    id="main-content"
+    class="admin-shell"
+    data-admin-root
+    data-supabase-url={supabaseUrl}
+    data-supabase-anon-key={supabaseAnonKey}
+    data-deployed-revision={String(menuContent.revision)}
+  >
+    <div class="admin-announcer" aria-live="polite" aria-atomic="true" data-admin-live></div>
+
+    <section class="admin-auth-panel admin-panel" data-view="loading" aria-labelledby="loading-title">
+      <p class="admin-eyebrow">Panel privado</p>
+      <h1 id="loading-title">Preparando administración</h1>
+      <p class="admin-muted">Estamos revisando la sesión guardada.</p>
+      <div class="admin-loading-line" aria-hidden="true"></div>
+    </section>
+
+    <section class="admin-auth-panel admin-panel" data-view="configuration" hidden aria-labelledby="configuration-title">
+      <p class="admin-eyebrow">Configuración pendiente</p>
+      <h1 id="configuration-title">El panel todavía no está conectado</h1>
+      <p>
+        La interfaz ya está lista, pero faltan la URL pública y la clave anónima de Supabase.
+        Configuralas para habilitar el acceso.
+      </p>
+      <a class="admin-button admin-button--secondary" href="/">Volver al menú</a>
+    </section>
+
+    <section class="admin-auth-panel admin-panel" data-view="login" hidden aria-labelledby="login-title">
+      <p class="admin-eyebrow">Panel privado</p>
+      <h1 id="login-title">Ingresá a la administración</h1>
+      <p class="admin-muted">Usá el único acceso autorizado de Il Figlio.</p>
+
+      <form class="admin-form" data-form="login" novalidate>
+        <div class="admin-field">
+          <label for="login-email">Email</label>
+          <input id="login-email" name="email" type="email" autocomplete="username" aria-describedby="login-email-error" required />
+          <p id="login-email-error" class="admin-field__error" data-error-for="email"></p>
+        </div>
+        <div class="admin-field">
+          <label for="login-password">Contraseña</label>
+          <input
+            id="login-password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            aria-describedby="login-password-error"
+            required
+          />
+          <p id="login-password-error" class="admin-field__error" data-error-for="password"></p>
+        </div>
+        <button class="admin-button admin-button--primary" type="submit" data-busy-label="Ingresando…">
+          Ingresar
+        </button>
+      </form>
+
+      <button class="admin-text-button" type="button" data-show-view="recovery-request">
+        Olvidé mi contraseña
+      </button>
+    </section>
+
+    <section
+      class="admin-auth-panel admin-panel"
+      data-view="recovery-request"
+      hidden
+      aria-labelledby="recovery-title"
+    >
+      <p class="admin-eyebrow">Recuperar acceso</p>
+      <h1 id="recovery-title">Recibí un enlace por email</h1>
+      <p class="admin-muted">
+        Si el email corresponde al usuario autorizado, Supabase enviará un enlace seguro.
+      </p>
+      <form class="admin-form" data-form="recovery-request" novalidate>
+        <div class="admin-field">
+          <label for="recovery-email">Email</label>
+          <input id="recovery-email" name="email" type="email" autocomplete="email" aria-describedby="recovery-email-error" required />
+          <p id="recovery-email-error" class="admin-field__error" data-error-for="email"></p>
+        </div>
+        <button class="admin-button admin-button--primary" type="submit" data-busy-label="Enviando…">
+          Enviar enlace
+        </button>
+      </form>
+      <button class="admin-text-button" type="button" data-show-view="login">Volver al acceso</button>
+    </section>
+
+    <section
+      class="admin-auth-panel admin-panel"
+      data-view="set-password"
+      hidden
+      aria-labelledby="set-password-title"
+    >
+      <p class="admin-eyebrow">Nuevo acceso</p>
+      <h1 id="set-password-title">Definí una contraseña nueva</h1>
+      <p class="admin-muted">Debe tener al menos 10 caracteres.</p>
+      <form class="admin-form" data-form="set-password" novalidate>
+        <div class="admin-field">
+          <label for="new-password">Nueva contraseña</label>
+          <input
+            id="new-password"
+            name="password"
+            type="password"
+            minlength="10"
+            autocomplete="new-password"
+            aria-describedby="new-password-error"
+            required
+          />
+          <p id="new-password-error" class="admin-field__error" data-error-for="password"></p>
+        </div>
+        <div class="admin-field">
+          <label for="new-password-confirmation">Confirmar contraseña</label>
+          <input
+            id="new-password-confirmation"
+            name="password_confirmation"
+            type="password"
+            minlength="10"
+            autocomplete="new-password"
+            aria-describedby="new-password-confirmation-error"
+            required
+          />
+          <p id="new-password-confirmation-error" class="admin-field__error" data-error-for="password_confirmation"></p>
+        </div>
+        <button class="admin-button admin-button--primary" type="submit" data-busy-label="Guardando…">
+          Guardar contraseña
+        </button>
+      </form>
+    </section>
+
+    <section class="admin-auth-panel admin-panel" data-view="unauthorized" hidden aria-labelledby="unauthorized-title">
+      <p class="admin-eyebrow">Acceso restringido</p>
+      <h1 id="unauthorized-title">Esta cuenta no administra Il Figlio</h1>
+      <p>
+        La sesión es válida, pero el usuario no está incluido en la lista privada de administración.
+      </p>
+      <button class="admin-button admin-button--secondary" type="button" data-action="logout">
+        Cerrar sesión
+      </button>
+    </section>
+
+    <div class="admin-dashboard" data-view="dashboard" hidden>
+      <section class="admin-summary" aria-label="Resumen del panel">
+        <div>
+          <span class="admin-summary__label">Negocio</span>
+          <strong class="admin-status-chip" data-business-summary>Sin datos</strong>
+        </div>
+        <div>
+          <span class="admin-summary__label">Carta</span>
+          <strong class="admin-status-chip" data-publication-summary>Sin datos</strong>
+        </div>
+        <div class="admin-summary__account">
+          <span class="admin-summary__label">Sesión</span>
+          <strong data-staff-email>Usuario autorizado</strong>
+        </div>
+      </section>
+
+      <nav class="admin-section-nav" aria-label="Secciones de administración">
+        <a href="#estado">Estado</a>
+        <a href="#disponibilidad">Disponibilidad</a>
+        <a href="#carta">Carta</a>
+        <a href="#publicacion">Publicación</a>
+        <a href="#cuenta">Cuenta</a>
+      </nav>
+
+      <div class="admin-dashboard__grid">
+        <section id="estado" class="admin-panel admin-section" aria-labelledby="estado-title">
+          <div class="admin-section__heading">
+            <div>
+              <p class="admin-eyebrow">Operación inmediata</p>
+              <h2 id="estado-title">Estado del negocio</h2>
+            </div>
+            <span class="admin-immediate-label">No requiere publicar</span>
+          </div>
+
+          <form class="admin-form" data-form="business-status" novalidate>
+            <div class="admin-field">
+              <label for="business-status">Estado visible</label>
+              <select id="business-status" name="status" required>
+                <option value="accepting_orders">Tomando pedidos</option>
+                <option value="paused">Pedidos pausados</option>
+                <option value="sold_out">Producción agotada</option>
+                <option value="closed">Cerrado</option>
+              </select>
+              <p class="admin-field__hint">El estado manual prevalece sobre los horarios informativos.</p>
+            </div>
+            <div class="admin-field">
+              <label for="business-message">Mensaje opcional</label>
+              <textarea
+                id="business-message"
+                name="message"
+                rows="3"
+                maxlength="160"
+                aria-describedby="business-message-error"
+                placeholder="Ej.: Volvemos el próximo viernes."
+              ></textarea>
+              <div class="admin-field__meta">
+                <p id="business-message-error" class="admin-field__error" data-error-for="message"></p>
+                <span data-counter-for="business-message">0/160</span>
+              </div>
+            </div>
+            <button class="admin-button admin-button--primary" type="submit" data-busy-label="Guardando…">
+              Guardar estado
+            </button>
+          </form>
+        </section>
+
+        <section id="publicacion" class="admin-panel admin-section" aria-labelledby="publicacion-title">
+          <div class="admin-section__heading">
+            <div>
+              <p class="admin-eyebrow">Carta pública</p>
+              <h2 id="publicacion-title">Publicación</h2>
+            </div>
+          </div>
+          <div class="admin-publication-copy" data-publication-copy></div>
+          <dl class="admin-revisions">
+            <div>
+              <dt>Versión publicada</dt>
+              <dd class="price-figures" data-deployed-revision>{menuContent.revision}</dd>
+            </div>
+            <div>
+              <dt>Versión actual</dt>
+              <dd class="price-figures" data-current-revision>—</dd>
+            </div>
+            <div>
+              <dt>Última solicitud</dt>
+              <dd data-last-publish>Sin registro</dd>
+            </div>
+          </dl>
+          <button
+            class="admin-button admin-button--primary"
+            type="button"
+            data-action="publish"
+            data-busy-label="Solicitando…"
+          >
+            Publicar cambios
+          </button>
+        </section>
+      </div>
+
+      <section id="disponibilidad" class="admin-panel admin-section" aria-labelledby="disponibilidad-title">
+        <div class="admin-section__heading admin-section__heading--actions">
+          <div>
+            <p class="admin-eyebrow">Operación inmediata</p>
+            <h2 id="disponibilidad-title">Disponibilidad</h2>
+            <p class="admin-muted">Cada control afecta al sabor completo y no requiere publicar.</p>
+          </div>
+          <div class="admin-heading-actions">
+            <button
+              class="admin-button admin-button--secondary"
+              type="button"
+              data-action="reset-availability"
+              data-busy-label="Actualizando…"
+            >
+              Marcar todo disponible
+            </button>
+            <button
+              class="admin-button admin-button--danger"
+              type="button"
+              data-action="sold-out"
+              data-busy-label="Actualizando…"
+            >
+              Producción agotada
+            </button>
+          </div>
+        </div>
+        <div class="admin-availability-list" data-availability-list></div>
+      </section>
+
+      <section id="carta" class="admin-panel admin-section" aria-labelledby="carta-title">
+        <div class="admin-section__heading">
+          <div>
+            <p class="admin-eyebrow">Contenido editorial</p>
+            <h2 id="carta-title">Carta</h2>
+            <p class="admin-muted">Altas, ediciones y eliminaciones requieren publicar.</p>
+          </div>
+        </div>
+
+        <details class="admin-create" data-create-panel>
+          <summary>Agregar un sabor</summary>
+          <form class="admin-form admin-create__form" data-form="create-item" novalidate>
+            <div class="admin-field">
+              <label for="create-category">Categoría</label>
+              <select id="create-category" name="category_code" required data-create-category></select>
+            </div>
+            <div class="admin-field">
+              <label for="create-name">Nombre</label>
+              <input id="create-name" name="name" type="text" maxlength="80" aria-describedby="create-name-error" required />
+              <p id="create-name-error" class="admin-field__error" data-error-for="name"></p>
+            </div>
+            <div class="admin-field">
+              <label for="create-description">Descripción <span>(opcional)</span></label>
+              <textarea id="create-description" name="description" rows="3" maxlength="320" aria-describedby="create-description-error"></textarea>
+              <div class="admin-field__meta">
+                <p id="create-description-error" class="admin-field__error" data-error-for="description"></p>
+                <span data-counter-for="create-description">0/320</span>
+              </div>
+            </div>
+            <fieldset class="admin-prices">
+              <legend>Precios</legend>
+              <p class="admin-field__hint">Importes enteros en pesos argentinos, sin puntos ni signo $.</p>
+              <div class="admin-price-fields" data-create-prices></div>
+            </fieldset>
+            <button class="admin-button admin-button--primary" type="submit" data-busy-label="Agregando…">
+              Agregar sabor
+            </button>
+          </form>
+        </details>
+
+        <div class="admin-menu-editor" data-menu-editor></div>
+
+        <section class="admin-archived" aria-labelledby="archived-title">
+          <div class="admin-section__heading">
+            <div>
+              <p class="admin-eyebrow">Recuperables</p>
+              <h3 id="archived-title">Eliminados</h3>
+            </div>
+          </div>
+          <div data-archived-list></div>
+        </section>
+      </section>
+
+      <section id="cuenta" class="admin-panel admin-section" aria-labelledby="cuenta-title">
+        <div class="admin-section__heading">
+          <div>
+            <p class="admin-eyebrow">Acceso</p>
+            <h2 id="cuenta-title">Cuenta</h2>
+          </div>
+        </div>
+
+        <div class="admin-account-grid">
+          <form class="admin-form" data-form="change-password" novalidate>
+            <h3>Cambiar contraseña</h3>
+            <div class="admin-field">
+              <label for="account-password">Nueva contraseña</label>
+              <input
+                id="account-password"
+                name="password"
+                type="password"
+                minlength="10"
+                autocomplete="new-password"
+                aria-describedby="account-password-error"
+                required
+              />
+              <p id="account-password-error" class="admin-field__error" data-error-for="password"></p>
+            </div>
+            <div class="admin-field">
+              <label for="account-password-confirmation">Confirmar contraseña</label>
+              <input
+                id="account-password-confirmation"
+                name="password_confirmation"
+                type="password"
+                minlength="10"
+                autocomplete="new-password"
+                aria-describedby="account-password-confirmation-error"
+                required
+              />
+              <p id="account-password-confirmation-error" class="admin-field__error" data-error-for="password_confirmation"></p>
+            </div>
+            <button class="admin-button admin-button--secondary" type="submit" data-busy-label="Guardando…">
+              Cambiar contraseña
+            </button>
+          </form>
+
+          <div class="admin-account-actions">
+            <h3>Sesión actual</h3>
+            <p class="admin-muted" data-account-email>Usuario autorizado</p>
+            <button class="admin-button admin-button--secondary" type="button" data-action="logout">
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    import { startAdminApp } from "../../admin/main";
+
+    startAdminApp();
+  </script>
+</BaseLayout>

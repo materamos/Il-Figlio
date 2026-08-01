@@ -1,0 +1,86 @@
+# Il Figlio
+
+Carta QR y landing minimalista para Il Figlio, con un administrador privado y acotado para mantener sabores, precios y disponibilidad. El proyecto conserva el stack probado en El Faraón —Astro, Supabase y Vercel— pero reduce el dominio a una sola carta, un solo usuario y dos flujos claramente separados: edición/publicación y operación inmediata.
+
+## Estado del proyecto
+
+La aplicación está preparada para desarrollarse y validarse con datos locales. La creación de los proyectos remotos de Supabase y Vercel, sus credenciales, el dominio y el QR definitivo quedan deliberadamente pendientes hasta la activación.
+
+Documentación principal:
+
+- [Arquitectura](docs/architecture.md)
+- [Activación de Supabase y Vercel](docs/activation.md)
+- [Sistema de diseño](design-system/il-figlio/MASTER.md)
+
+## Requisitos
+
+- Node.js `22.23.0` (se admite cualquier versión compatible con `22.x`)
+- npm `10` o superior
+- Deno `2.7.14` para validar la Edge Function
+- Un runtime compatible con Docker (Docker Desktop o Colima) para ejecutar Supabase local
+
+Las versiones recomendadas están declaradas en `package.json` mediante Volta.
+
+## Inicio rápido
+
+```bash
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+La URL local predeterminada es `http://localhost:4321`. El fixture es solo una fuente de desarrollo: debe elegirse mediante `MENU_DATA_SOURCE=fixture` y `ALLOW_FIXTURE_BUILD=true`.
+
+## Comandos
+
+| Comando | Propósito |
+| --- | --- |
+| `npm run dev` | Inicia Astro en desarrollo. |
+| `npm run build` | Valida el entorno, genera `dist/` y rechaza secretos en el artefacto. |
+| `npm run preview` | Sirve localmente el último build. |
+| `npm run check` | Valida Astro y TypeScript estricto. |
+| `npm run check:js` | Comprueba sintaxis de JavaScript del repositorio. |
+| `npm run lint` | Ejecuta ESLint. |
+| `npm test` | Ejecuta las suites de menú, admin y tooling. |
+| `npm run test:menu` | Ejecuta reglas y contratos del menú. |
+| `npm run test:admin` | Ejecuta reglas y contratos del administrador. |
+| `npm run test:tools` | Ejecuta las guardas del build y del artefacto. |
+| `npm run verify:dist-secrets` | Rechaza secretos o marcadores privados dentro de `dist/`. |
+| `npm run supabase:start` | Inicia Supabase local. |
+| `npm run supabase:reset` | Reconstruye la base local desde migraciones y seed. |
+| `npm run test:db` | Ejecuta las pruebas SQL de Supabase. |
+
+El runner descubre archivos en `tests/<suite>/**/*.test.mjs` y, por compatibilidad con scripts existentes, `scripts/test-<suite>-*.mjs`. Una suite vacía falla de forma intencional: CI nunca informa éxito si faltan sus pruebas.
+
+## Builds y fuentes de datos
+
+### Fixture local o CI
+
+```bash
+MENU_DATA_SOURCE=fixture ALLOW_FIXTURE_BUILD=true npm run build
+```
+
+CI usa exactamente ese opt-in. Un build productivo detectado por `VERCEL_ENV`, `DEPLOY_ENV`, `APP_ENV` o `NODE_ENV` rechaza el fixture incluso si se intenta habilitarlo.
+
+### Supabase
+
+```bash
+MENU_DATA_SOURCE=supabase \
+PUBLIC_SUPABASE_URL=https://PROJECT_REF.supabase.co \
+PUBLIC_SUPABASE_ANON_KEY=... \
+SUPABASE_DB_URL=postgresql://... \
+npm run build
+```
+
+`SUPABASE_DB_URL` es privada y se utiliza únicamente para obtener el snapshot editorial durante el build. Nunca debe llevar prefijo `PUBLIC_` ni llegar al navegador.
+
+## Criterios de seguridad
+
+- El sitio público solo recibe la URL y la clave anónima de Supabase.
+- El navegador no escribe directamente en tablas editoriales; el admin usa RPCs autorizadas.
+- El Deploy Hook de Vercel existe únicamente como secreto de la Edge Function.
+- `/admin/` se sirve con `noindex`, `nofollow`, `noarchive` y `no-store`.
+- El build productivo falla sin credenciales o si intenta utilizar el fixture.
+- CI inspecciona el artefacto generado en busca de valores y marcadores privados.
+
+No guardes secretos reales en archivos `.env`; todos están ignorados salvo `.env.example`.

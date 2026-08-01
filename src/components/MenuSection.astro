@@ -1,0 +1,25 @@
+---
+import type { MenuCategoryDefinition, MenuItem } from "../types/menu";
+import MenuItemRow from "./MenuItemRow.astro";
+
+interface Props {
+  category: MenuCategoryDefinition;
+  items: readonly MenuItem[];
+  sectionNumber: number;
+}
+
+const { category, items, sectionNumber } = Astro.props;
+---
+
+<section class="menu-section" id={category.id} aria-labelledby={`${category.id}-title`}>
+  <header class="menu-section__header">
+    <p class="menu-section__number" aria-hidden="true">
+      {String(sectionNumber).padStart(2, "0")}
+    </p>
+    <h2 class="menu-section__title" id={`${category.id}-title`}>{category.name}</h2>
+  </header>
+
+  <div class="menu-section__items">
+    {items.map((item) => <MenuItemRow item={item} />)}
+  </div>
+</section>

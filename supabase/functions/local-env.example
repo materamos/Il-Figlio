@@ -1,0 +1,7 @@
+# Copy to an untracked .env.local only when custom values are needed.
+# This committed example targets the bundled local mock hook and contains no secrets.
+PUBLISH_ALLOWED_ORIGINS=http://localhost:4321
+DEPLOY_HOOK_MODE=test
+VERCEL_DEPLOY_HOOK_URL=http://host.docker.internal:8787/deploy
+DEPLOY_HOOK_TIMEOUT_MS=5000
+PUBLISH_COOLDOWN_SECONDS=2

@@ -1,0 +1,220 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --color-brand: #ff0000;
+  --color-action: #b80000;
+  --color-action-hover: #970000;
+  --color-canvas: #ffffff;
+  --color-surface: #fff9f7;
+  --color-ink: #171717;
+  --color-muted-ink: #66615f;
+  --color-border: #e7e1de;
+  --color-disabled: #a39d99;
+  --color-success: #166534;
+  --color-warning: #8a4b08;
+  --color-error: #9f1239;
+  --color-info: #334155;
+  --font-display: "Playfair Display Variable", Georgia, "Times New Roman", serif;
+  --font-body: "Karla Variable", Arial, Helvetica, sans-serif;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+  --radius-control: 0.5rem;
+  --radius-panel: 0.75rem;
+  --transition-fast: 180ms ease-out;
+  --layer-sticky: 20;
+  --layer-dialog: 100;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 20rem;
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+  background: var(--color-canvas);
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+button,
+select,
+summary,
+[role="button"],
+a[href] {
+  touch-action: manipulation;
+}
+
+button,
+summary,
+[role="button"],
+a[href] {
+  cursor: pointer;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.2em;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-block-start: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 650;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-action);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--color-brand);
+  color: var(--color-canvas);
+}
+
+.skip-link {
+  position: fixed;
+  inset-block-start: var(--space-3);
+  inset-inline-start: var(--space-3);
+  z-index: 1000;
+  translate: 0 -200%;
+  border-radius: var(--radius-control);
+  background: var(--color-ink);
+  color: var(--color-canvas);
+  padding: var(--space-3) var(--space-4);
+  font-weight: 700;
+  transition: translate var(--transition-fast);
+}
+
+.skip-link:focus {
+  translate: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  padding: 0.75rem 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.button--primary {
+  background: var(--color-action);
+  color: var(--color-canvas);
+}
+
+.button--primary:hover {
+  background: var(--color-action-hover);
+}
+
+.button--secondary {
+  border-color: var(--color-ink);
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.button--secondary:hover {
+  background: var(--color-ink);
+  color: var(--color-canvas);
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.price-figures {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

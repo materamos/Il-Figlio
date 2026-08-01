@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.window", "dom", "dom.iterable"],
+    "strict": true
+  },
+  "tasks": {
+    "check": "deno check publish-menu-changes/index.ts publish-menu-changes/handler_test.ts",
+    "test": "deno test --allow-env publish-menu-changes/handler_test.ts"
+  }
+}

@@ -1,0 +1,24 @@
+---
+interface Props {
+  class?: string;
+  decorative?: boolean;
+  size?: number;
+}
+
+const {
+  class: className = "",
+  decorative = false,
+  size = 1080,
+} = Astro.props;
+---
+
+<img
+  class={className}
+  src="/brand/il-figlio-mark-256.png"
+  width={size}
+  height={size}
+  alt={decorative ? "" : "Il Figlio"}
+  aria-hidden={decorative ? "true" : undefined}
+  decoding="sync"
+  loading="eager"
+/>

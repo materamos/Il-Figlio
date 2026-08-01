@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Code, tests and fixture build
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.23.0
+          cache: npm
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282 # v2.0.4
+        with:
+          deno-version: v2.7.14
+          cache: true
+          cache-hash: ${{ hashFiles('supabase/functions/deno.json', 'supabase/functions/deno.lock') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check and test the Edge Function
+        working-directory: supabase/functions
+        run: |
+          deno task check
+          deno task test
+
+      - name: Check Astro and TypeScript
+        run: npm run check
+
+      - name: Check JavaScript syntax
+        run: npm run check:js
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run unit and guard tests
+        run: npm test
+
+      - name: Build with the explicit CI fixture
+        env:
+          ALLOW_FIXTURE_BUILD: "true"
+          MENU_DATA_SOURCE: fixture
+          PUBLIC_SITE_URL: https://il-figlio.example.test
+        run: npm run build
+
+      - name: Verify that the artifact contains no private values
+        run: npm run verify:dist-secrets
+
+  database:
+    name: Rebuild and test local Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.23.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Detect Supabase configuration
+        id: supabase
+        shell: bash
+        run: |
+          if [[ -f supabase/config.toml ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "supabase/config.toml is not present yet; local database validation is deferred."
+          fi
+
+      - name: Start local Supabase
+        if: steps.supabase.outputs.configured == 'true'
+        run: npm run supabase:start
+
+      - name: Rebuild from canonical migrations and seed
+        if: steps.supabase.outputs.configured == 'true'
+        run: npm run supabase:reset
+
+      - name: Run database tests
+        if: steps.supabase.outputs.configured == 'true'
+        run: npm run test:db
+
+      - name: Build against the local Supabase snapshot
+        if: steps.supabase.outputs.configured == 'true'
+        shell: bash
+        run: |
+          status_json="$(npx supabase status -o json)"
+          export PUBLIC_SUPABASE_URL="$(jq -er '.API_URL' <<<"$status_json")"
+          export PUBLIC_SUPABASE_ANON_KEY="$(jq -er '.ANON_KEY' <<<"$status_json")"
+          export SUPABASE_DB_URL="$(jq -er '.DB_URL' <<<"$status_json")"
+          export MENU_DATA_SOURCE=supabase
+          export PUBLIC_SITE_URL=https://il-figlio.example.test
+          npm run build
+
+      - name: Stop local Supabase
+        if: always() && steps.supabase.outputs.configured == 'true'
+        run: npm run supabase:stop -- --no-backup
