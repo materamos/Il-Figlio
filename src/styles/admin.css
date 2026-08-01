@@ -108,6 +108,20 @@
   padding: clamp(1.5rem, 5vw, 2.5rem);
 }
 
+/* Keep the access flow within the available viewport; a page scroll remains
+   available naturally when the active card is taller than that space. */
+.admin-shell:has(.admin-auth-panel:not([hidden])) {
+  display: grid;
+  min-height: calc(100dvh - 4.75rem);
+  align-content: center;
+  padding-block: max(var(--space-4), env(safe-area-inset-top))
+    max(var(--space-12), env(safe-area-inset-bottom));
+}
+
+.admin-shell:has(.admin-auth-panel:not([hidden])) .admin-auth-panel:not([hidden]) {
+  margin: 0 auto;
+}
+
 .admin-auth-panel h1 {
   margin-block-end: var(--space-4);
   font-size: clamp(2rem, 9vw, 3.5rem);
