@@ -5,6 +5,7 @@ Fuentes consultadas:
 - `IMG-20260723-WA0115.jpg`: 12 pizzas clásicas, ingredientes y precios de grande/porción.
 - `IMG-20260723-WA0116.jpg`: 4 pizzas rellenas, 4 gourmet, dos fainás, regla de mitad y mitad y datos de contacto.
 - Confirmación del propietario del proyecto: empanadas de carne y de jamón y queso, ambas a $2.800 por unidad.
+- Perfil de Instagram `@ilfigliopizza`: pizza al molde, masas de larga fermentación y horario de viernes a domingo desde las 19:00.
 
 ## Normalizaciones inequívocas
 
@@ -25,4 +26,4 @@ Fuentes consultadas:
 
 ## Datos deliberadamente ausentes
 
-No se incorporaron horarios, estado abierto/cerrado, zona o costo de entrega, medios de pago ni disponibilidad real. `initialMenuAvailability` habilita todos los productos únicamente como semilla de desarrollo; Supabase y el admin serán la fuente operativa al activar el sistema.
+No se incorporaron zona o costo de entrega, medios de pago ni disponibilidad real. `initialMenuAvailability` habilita todos los productos únicamente como semilla de desarrollo; Supabase y el admin serán la fuente operativa al activar el sistema. El estado abierto/cerrado sigue siendo operativo y se administra en tiempo real.

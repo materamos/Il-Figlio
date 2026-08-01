@@ -65,14 +65,20 @@ export interface BusinessRules {
   halfAndHalf: string;
 }
 
+export interface BusinessHours {
+  display: string;
+}
+
 /**
- * Only confirmed, stable business facts belong here. Runtime status and opening
- * hours deliberately live outside this contract because they are not confirmed.
+ * Only confirmed, stable business facts belong here. Runtime status deliberately
+ * lives outside this contract because it changes during service.
  */
 export interface BusinessProfile {
   name: string;
+  description: string;
   address: BusinessAddress;
   contact: BusinessContact;
+  hours: BusinessHours;
   rules: BusinessRules;
 }
 

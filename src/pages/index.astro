@@ -34,7 +34,7 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
 <BaseLayout
   title="Il Figlio | Pizza al molde en Lanús Oeste"
-  description="Pizza al molde abundante, crocante y jugosa. Consultá el menú y hacé tu pedido por WhatsApp."
+  description={`${ilFiglioBusiness.description} ${ilFiglioBusiness.hours.display} en Lanús Oeste. Consultá el menú y hacé tu pedido por WhatsApp.`}
   bodyClass="menu-body"
 >
   <main
@@ -43,6 +43,7 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
     data-menu-page
     data-supabase-url={publicSupabaseUrl}
     data-supabase-anon-key={publicSupabaseAnonKey}
+    data-opening-hours={ilFiglioBusiness.hours.display}
   >
     <header class="site-header" aria-label="Encabezado principal">
       <a class="site-header__brand" href="#inicio" aria-label="Il Figlio, volver al inicio">
@@ -59,7 +60,7 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
         <p class="hero__eyebrow">Pizzería de barrio · Lanús Oeste</p>
         <h1 class="hero__title" id="hero-title">Il Figlio</h1>
         <p class="hero__lede">
-          Pizza al molde abundante, crocante y jugosa. Abrimos los fines de semana.
+          {ilFiglioBusiness.description} {ilFiglioBusiness.hours.display}.
         </p>
       </div>
 

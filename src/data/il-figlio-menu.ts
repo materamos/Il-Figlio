@@ -26,6 +26,7 @@ const portionPrice = (amount: number): readonly MenuPrice[] => [
 
 export const ilFiglioBusiness = {
   name: "Il Figlio",
+  description: "Pizza al molde, masas de larga fermentación.",
   address: {
     streetAddress: "Diego Armando Maradona 1519",
     locality: "Lanús Oeste",
@@ -37,6 +38,9 @@ export const ilFiglioBusiness = {
     whatsappE164: "5491144097322",
     whatsappDefaultMessage: "Hola, quiero hacer un pedido en Il Figlio.",
     instagramHandle: "ilfigliopizza",
+  },
+  hours: {
+    display: "Viernes a domingo desde las 19:00",
   },
   rules: {
     halfAndHalf:

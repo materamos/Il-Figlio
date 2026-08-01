@@ -54,8 +54,9 @@ test("confirmed contact and ordering facts remain stable", () => {
   assert.equal(ilFiglioBusiness.contact.phoneDisplay, "11 4409-7322");
   assert.equal(ilFiglioBusiness.contact.whatsappE164, "5491144097322");
   assert.equal(ilFiglioBusiness.contact.instagramHandle, "ilfigliopizza");
+  assert.equal(ilFiglioBusiness.description, "Pizza al molde, masas de larga fermentación.");
+  assert.equal(ilFiglioBusiness.hours.display, "Viernes a domingo desde las 19:00");
   assert.match(ilFiglioBusiness.rules.halfAndHalf, /más cara/);
-  assert.equal("hours" in ilFiglioBusiness, false);
   assert.equal("status" in ilFiglioBusiness, false);
 });
 
