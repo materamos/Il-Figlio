@@ -48,6 +48,7 @@ if (menuPage) {
   const whatsappLinks = menuPage.querySelectorAll("[data-whatsapp-link]");
   const supabaseUrl = menuPage.dataset.supabaseUrl?.replace(/\/$/, "");
   const supabaseAnonKey = menuPage.dataset.supabaseAnonKey;
+  const openingHours = menuPage.dataset.openingHours;
 
   const setStatus = ({ label, detail, tone = "neutral", ordering = true }) => {
     if (statusRoot instanceof HTMLElement) statusRoot.dataset.tone = tone;
@@ -126,7 +127,7 @@ if (menuPage) {
       },
       closed: {
         label: "Ahora estamos cerrados",
-        detail: message || "Abrimos los fines de semana. Consultanos por WhatsApp.",
+        detail: message || `${openingHours}. Consultanos por WhatsApp.`,
         tone: "neutral",
         ordering: false,
       },
