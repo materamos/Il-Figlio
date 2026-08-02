@@ -96,17 +96,20 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
       </div>
     </section>
 
-    <div class="menu-index-wrap">
-      <nav class="menu-index" aria-label="Categorías de la carta">
-        <ul class="menu-index__list">
-          {categories.map((category) => (
-            <li>
-              <a class="menu-index__link" href={`#${category.id}`}>{category.name}</a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </div>
+    <span class="menu-index-sentinel" data-menu-index-sentinel aria-hidden="true"></span>
+    <nav class="menu-index" aria-labelledby="menu-index-title">
+      <a class="menu-index__brand" href="#inicio" aria-label="Il Figlio, volver al inicio">
+        <BrandMark class="menu-index__brand-image" decorative={true} size={1080} />
+      </a>
+      <h2 class="menu-index__title" id="menu-index-title">Categorías</h2>
+      <ul class="menu-index__list">
+        {categories.map((category) => (
+          <li class="menu-index__item">
+            <a class="menu-index__link" href={`#${category.id}`}>{category.name}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
 
     <div class="menu-content" id="carta">
       <header class="menu-intro">
@@ -176,4 +179,5 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
   </main>
 
   <script is:inline type="module" src="/scripts/menu-runtime-state.js"></script>
+  <script is:inline type="module" src="/scripts/menu-index-sticky.js"></script>
 </BaseLayout>
