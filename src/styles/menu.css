@@ -482,14 +482,36 @@
   .menu-item {
     grid-template-columns: minmax(0, 1fr) 5rem;
     align-items: start;
+    column-gap: var(--space-3);
+    row-gap: 0;
+  }
+
+  .menu-item__content {
+    display: contents;
+  }
+
+  .menu-item__heading-row {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .menu-item__description {
+    grid-column: 1;
+    grid-row: 2;
   }
 
   .menu-item__prices {
     display: grid;
+    grid-column: 2;
+    grid-row: 2;
     align-content: start;
     gap: var(--space-2);
     justify-content: stretch;
     text-align: end;
+  }
+
+  .menu-item:not(:has(.menu-item__description)) .menu-item__prices {
+    grid-row: 1;
   }
 
   .menu-item__price {
