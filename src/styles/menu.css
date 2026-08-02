@@ -466,10 +466,34 @@
 }
 
 @media (max-width: 47.99rem) {
-  .menu-section__price-headings,
-  .menu-item__prices {
-    justify-content: end;
+  .menu-section__price-headings {
+    display: grid;
+    width: 5rem;
+    margin-inline-start: auto;
+    gap: var(--space-1);
+    justify-content: stretch;
     text-align: end;
+  }
+
+  .menu-section__price-heading {
+    min-width: 0;
+  }
+
+  .menu-item {
+    grid-template-columns: minmax(0, 1fr) 5rem;
+    align-items: start;
+  }
+
+  .menu-item__prices {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    justify-content: stretch;
+    text-align: end;
+  }
+
+  .menu-item__price {
+    min-width: 0;
   }
 }
 
