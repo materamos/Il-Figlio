@@ -545,10 +545,12 @@
 
 @media (min-width: 56rem) {
   .menu-index {
+    width: min(100% - 2rem, 51.25rem);
+    margin-inline: auto;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: var(--space-4);
-    padding-inline: max(var(--space-4), calc((100% - 70rem) / 2));
+    padding-inline: 0;
   }
 
   .menu-index__brand {
