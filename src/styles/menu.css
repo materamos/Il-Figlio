@@ -543,6 +543,29 @@
   }
 }
 
+@media (min-width: 56rem) {
+  .menu-index {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-4);
+    padding-inline: max(var(--space-4), calc((100% - 70rem) / 2));
+  }
+
+  .menu-index__brand {
+    grid-column: 1;
+    grid-row: 1;
+    width: 3.75rem;
+    margin: 0;
+  }
+
+  .menu-index__list {
+    grid-column: 2;
+    grid-row: 1;
+    flex-wrap: nowrap;
+    justify-content: end;
+  }
+}
+
 @media (max-width: 24rem) {
   .site-header__name {
     display: none;
