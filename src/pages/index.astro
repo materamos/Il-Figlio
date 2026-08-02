@@ -1,6 +1,9 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import BrandMark from "../components/BrandMark.astro";
+import InstagramIcon from "../components/InstagramIcon.astro";
+import LocationIcon from "../components/LocationIcon.astro";
+import PhoneIcon from "../components/PhoneIcon.astro";
 import WhatsAppIcon from "../components/WhatsAppIcon.astro";
 import { ilFiglioBusiness } from "../data";
 
@@ -8,6 +11,10 @@ const whatsappHref = `https://wa.me/${ilFiglioBusiness.contact.whatsappE164}?tex
   ilFiglioBusiness.contact.whatsappDefaultMessage,
 )}`;
 const phoneHref = "tel:+541144097322";
+const instagramHref = `https://www.instagram.com/${ilFiglioBusiness.contact.instagramHandle}/`;
+const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+  ilFiglioBusiness.address.display,
+)}`;
 const publicSupabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 ---
@@ -73,6 +80,42 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
           <span data-whatsapp-label>Consultar por WhatsApp</span>
         </a>
         <a class="button button--secondary" href="/carta/">Ver la carta</a>
+      </div>
+    </section>
+
+    <section class="contact-section" aria-labelledby="contact-title">
+      <div class="contact-section__inner">
+        <div>
+          <p class="section-eyebrow">Contacto</p>
+          <h2 class="contact-section__title" id="contact-title">Tu próxima pizza empieza acá.</h2>
+        </div>
+
+        <ul class="contact-list">
+          <li>
+            <a href={whatsappHref} target="_blank" rel="noopener noreferrer" data-whatsapp-link>
+              <WhatsAppIcon />
+              <span data-whatsapp-label>WhatsApp {ilFiglioBusiness.contact.phoneDisplay}</span>
+            </a>
+          </li>
+          <li>
+            <a href={phoneHref}>
+              <PhoneIcon />
+              <span>Llamar al {ilFiglioBusiness.contact.phoneDisplay}</span>
+            </a>
+          </li>
+          <li>
+            <a href={mapHref} target="_blank" rel="noopener noreferrer">
+              <LocationIcon />
+              <span>{ilFiglioBusiness.address.display}</span>
+            </a>
+          </li>
+          <li>
+            <a href={instagramHref} target="_blank" rel="noopener noreferrer">
+              <InstagramIcon />
+              <span>@{ilFiglioBusiness.contact.instagramHandle}</span>
+            </a>
+          </li>
+        </ul>
       </div>
     </section>
 

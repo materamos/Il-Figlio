@@ -14,6 +14,7 @@ test("the landing links to the separate carta route and migrates the legacy hash
   assert.match(landing, /window\.location\.hash === "#carta"/);
   assert.match(landing, /window\.location\.replace\("\/carta\/"\)/);
   assert.match(landing, /<footer class="site-footer">/);
+  assert.match(landing, /<section class="contact-section"/);
   assert.doesNotMatch(landing, /<MenuSection/);
 });
 
@@ -28,6 +29,7 @@ test("the carta route owns the public menu and the legacy menu URL redirects the
   assert.match(carta, /class="menu-whatsapp-button"/);
   assert.match(carta, /href={whatsappHref}/);
   assert.doesNotMatch(carta, /<footer class="site-footer">/);
+  assert.doesNotMatch(carta, /<section class="contact-section"/);
   assert.match(carta, /href="\/" aria-label="Il Figlio, volver al inicio"/);
   assert.match(vercel, /"source": "\/menu"[\s\S]*?"destination": "\/carta\/"/);
   assert.match(vercel, /"source": "\/menu\/"[\s\S]*?"destination": "\/carta\/"/);
