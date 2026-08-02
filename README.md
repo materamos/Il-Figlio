@@ -1,6 +1,6 @@
 # Il Figlio
 
-Carta QR y landing minimalista para Il Figlio, con un administrador privado y acotado para mantener sabores, precios y disponibilidad. El proyecto conserva el stack probado en El Faraón —Astro, Supabase y Vercel— pero reduce el dominio a una sola carta, un solo usuario y dos flujos claramente separados: edición/publicación y operación inmediata.
+Landing y carta QR para Il Figlio, con un administrador privado y acotado para mantener sabores, precios y disponibilidad. La portada pública vive en `/` y la carta en `/carta/`. El proyecto conserva el stack probado en El Faraón —Astro, Supabase y Vercel— pero reduce el dominio a una sola carta, un solo usuario y dos flujos claramente separados: edición/publicación y operación inmediata.
 
 ## Estado del proyecto
 

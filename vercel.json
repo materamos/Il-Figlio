@@ -68,12 +68,12 @@
   "redirects": [
     {
       "source": "/menu",
-      "destination": "/",
+      "destination": "/carta/",
       "permanent": true
     },
     {
       "source": "/menu/",
-      "destination": "/",
+      "destination": "/carta/",
       "permanent": true
     },
     {

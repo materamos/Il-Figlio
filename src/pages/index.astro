@@ -1,44 +1,24 @@
 ---
-import "../styles/menu.css";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import BrandMark from "../components/BrandMark.astro";
-import InstagramIcon from "../components/InstagramIcon.astro";
-import LocationIcon from "../components/LocationIcon.astro";
-import MenuSection from "../components/MenuSection.astro";
-import PhoneIcon from "../components/PhoneIcon.astro";
 import WhatsAppIcon from "../components/WhatsAppIcon.astro";
 import { ilFiglioBusiness } from "../data";
-import { loadMenuContent } from "../utils/menuContent";
 
-const content = await loadMenuContent();
-const categories = [...content.categories].sort((a, b) => a.orderIndex - b.orderIndex);
-const itemsByCategory = new Map(
-  categories.map((category) => [
-    category.id,
-    content.items
-      .filter((item) => item.categoryId === category.id)
-      .sort((a, b) => a.orderIndex - b.orderIndex),
-  ]),
-);
 const whatsappHref = `https://wa.me/${ilFiglioBusiness.contact.whatsappE164}?text=${encodeURIComponent(
   ilFiglioBusiness.contact.whatsappDefaultMessage,
 )}`;
 const phoneHref = "tel:+541144097322";
-const instagramHref = `https://www.instagram.com/${ilFiglioBusiness.contact.instagramHandle}/`;
-const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-  ilFiglioBusiness.address.display,
-)}`;
 const publicSupabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 ---
 
 <BaseLayout
   title="Il Figlio | Pizza al molde en Lanús Oeste"
-  description={`${ilFiglioBusiness.description} ${ilFiglioBusiness.hours.display} en Lanús Oeste. Consultá el menú y hacé tu pedido por WhatsApp.`}
-  bodyClass="menu-body"
+  description={`${ilFiglioBusiness.description} ${ilFiglioBusiness.hours.display} en Lanús Oeste.`}
+  bodyClass="landing-body"
 >
   <main
-    class="menu-page"
+    class="landing-page"
     id="main-content"
     data-menu-page
     data-supabase-url={publicSupabaseUrl}
@@ -46,7 +26,7 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
     data-opening-hours={ilFiglioBusiness.hours.display}
   >
     <header class="site-header" aria-label="Encabezado principal">
-      <a class="site-header__brand" href="#inicio" aria-label="Il Figlio, volver al inicio">
+      <a class="site-header__brand" href="/" aria-label="Il Figlio, inicio">
         <BrandMark class="site-header__mark" decorative={true} size={1080} />
         <span class="site-header__name">IL FIGLIO</span>
       </a>
@@ -92,92 +72,15 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
           <WhatsAppIcon />
           <span data-whatsapp-label>Consultar por WhatsApp</span>
         </a>
-        <a class="button button--secondary" href="#carta">Ver la carta</a>
+        <a class="button button--secondary" href="/carta/">Ver la carta</a>
       </div>
     </section>
-
-    <span class="menu-index-sentinel" data-menu-index-sentinel aria-hidden="true"></span>
-    <nav class="menu-index" aria-labelledby="menu-index-title">
-      <a class="menu-index__brand" href="#inicio" aria-label="Il Figlio, volver al inicio">
-        <BrandMark class="menu-index__brand-image" decorative={true} size={1080} />
-      </a>
-      <h2 class="menu-index__title" id="menu-index-title">Categorías</h2>
-      <ul class="menu-index__list">
-        {categories.map((category) => (
-          <li class="menu-index__item">
-            <a class="menu-index__link" href={`#${category.id}`}>{category.name}</a>
-          </li>
-        ))}
-      </ul>
-    </nav>
-
-    <div class="menu-content" id="carta">
-      <header class="menu-intro">
-        <p class="section-eyebrow">Nuestra carta</p>
-        <h2 class="menu-intro__title">Elegí tu favorita</h2>
-        <p class="menu-intro__copy">
-          Los productos agotados permanecen visibles para que conozcas toda nuestra propuesta.
-          Confirmá disponibilidad y tiempos por WhatsApp.
-        </p>
-      </header>
-
-      {categories.map((category, index) => (
-        <MenuSection
-          category={category}
-          items={itemsByCategory.get(category.id) ?? []}
-          sectionNumber={index + 1}
-        />
-      ))}
-
-      <aside class="menu-rules" aria-labelledby="menu-rules-title">
-        <h2 id="menu-rules-title">Para tener en cuenta</h2>
-        <p>{ilFiglioBusiness.rules.halfAndHalf}</p>
-        <p>Los precios y la disponibilidad se confirman al momento de hacer el pedido.</p>
-      </aside>
-    </div>
-
-    <section class="contact-section" aria-labelledby="contact-title">
-      <div class="contact-section__inner">
-        <div>
-          <p class="section-eyebrow">Contacto</p>
-          <h2 class="contact-section__title" id="contact-title">Tu próxima pizza empieza acá.</h2>
-        </div>
-
-        <ul class="contact-list">
-          <li>
-            <a href={whatsappHref} target="_blank" rel="noopener noreferrer" data-whatsapp-link>
-              <WhatsAppIcon />
-              <span data-whatsapp-label>WhatsApp {ilFiglioBusiness.contact.phoneDisplay}</span>
-            </a>
-          </li>
-          <li>
-            <a href={phoneHref}>
-              <PhoneIcon />
-              <span>Llamar al {ilFiglioBusiness.contact.phoneDisplay}</span>
-            </a>
-          </li>
-          <li>
-            <a href={mapHref} target="_blank" rel="noopener noreferrer">
-              <LocationIcon />
-              <span>{ilFiglioBusiness.address.display}</span>
-            </a>
-          </li>
-          <li>
-            <a href={instagramHref} target="_blank" rel="noopener noreferrer">
-              <InstagramIcon />
-              <span>@{ilFiglioBusiness.contact.instagramHandle}</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <footer class="site-footer">
-      <p>© {new Date().getFullYear()} Il Figlio</p>
-      <p>Pizza al molde · Lanús Oeste</p>
-    </footer>
   </main>
 
+  <script is:inline>
+    if (window.location.hash === "#carta") {
+      window.location.replace("/carta/");
+    }
+  </script>
   <script is:inline type="module" src="/scripts/menu-runtime-state.js"></script>
-  <script is:inline type="module" src="/scripts/menu-index-sticky.js"></script>
 </BaseLayout>
