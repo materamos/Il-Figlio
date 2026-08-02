@@ -25,6 +25,8 @@ test("the carta route owns the public menu and the legacy menu URL redirects the
 
   assert.match(carta, /import MenuSection/);
   assert.match(carta, /data-menu-page/);
+  assert.match(carta, /class="menu-whatsapp-button"/);
+  assert.match(carta, /href={whatsappHref}/);
   assert.doesNotMatch(carta, /<footer class="site-footer">/);
   assert.match(carta, /href="\/" aria-label="Il Figlio, volver al inicio"/);
   assert.match(vercel, /"source": "\/menu"[\s\S]*?"destination": "\/carta\/"/);

@@ -101,6 +101,29 @@
   background: var(--color-canvas);
 }
 
+.menu-whatsapp-button {
+  position: fixed;
+  inset-inline-end: max(1rem, env(safe-area-inset-right));
+  inset-block-end: max(1rem, env(safe-area-inset-bottom));
+  z-index: var(--layer-dialog);
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, #ffffff 22%, #25d366);
+  border-radius: 50%;
+  background: #25d366;
+  color: #ffffff;
+  box-shadow: 0 0.7rem 1.6rem rgba(0, 0, 0, 0.35);
+  text-decoration: none;
+}
+
+.menu-whatsapp-button svg {
+  display: block;
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
 .menu-content {
   width: min(100% - 2rem, 51.25rem);
   margin-inline: auto;
@@ -305,6 +328,16 @@
 }
 
 @media (max-width: 47.99rem) {
+  .menu-whatsapp-button {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .menu-whatsapp-button svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
   .menu-section__price-headings {
     display: grid;
     width: 5rem;

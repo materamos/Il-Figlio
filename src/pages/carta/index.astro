@@ -133,6 +133,16 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
   </main>
 
+  <a
+    class="menu-whatsapp-button"
+    href={whatsappHref}
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Contactar por WhatsApp"
+  >
+    <WhatsAppIcon />
+  </a>
+
   <script is:inline type="module" src="/scripts/menu-runtime-state.js"></script>
   <script is:inline type="module" src="/scripts/menu-index-sticky.js"></script>
 </BaseLayout>
