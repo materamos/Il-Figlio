@@ -334,8 +334,24 @@ un nuevo intento.
 
 ## Auditoría de solo lectura
 
-Ejecutar con una credencial privilegiada de auditoría, nunca con la credencial
-de build:
+El comando preferido combina la auditoría SQL con probes contra la superficie
+real del Data API:
+
+```sh
+npm run supabase:audit
+```
+
+Requiere `SUPABASE_AUDIT_DB_URL`, `PUBLIC_SUPABASE_URL` y
+`PUBLIC_SUPABASE_ANON_KEY`. La conexión de auditoría es privilegiada y privada;
+nunca debe reutilizarse como credencial de build ni llevar prefijo `PUBLIC_`.
+
+El runner comprueba que el archivo SQL comience con una transacción read-only y
+termine en `ROLLBACK`, considera hallazgo cualquier fila con `diagnostic` y
+redacta las credenciales de los errores. Después usa el RPC público como control
+positivo y exige `406/PGRST106` al intentar seleccionar los schemas
+`menu_content` y `app_private` mediante `Accept-Profile`.
+
+Como alternativa manual para revisar únicamente el contrato SQL:
 
 ```sh
 psql "$SUPABASE_AUDIT_DB_URL" \
@@ -343,8 +359,10 @@ psql "$SUPABASE_AUDIT_DB_URL" \
   --file=docs/supabase/audits/database-audit.sql
 ```
 
-El archivo comienza con `BEGIN READ ONLY` y cada consulta debe devolver cero
-filas. La suite pgTAP se ejecuta únicamente sobre una base local descartable.
+Cada consulta debe devolver cero filas. La suite pgTAP se ejecuta únicamente
+sobre una base local descartable. CI ejecuta el comando completo contra esa
+instancia local; auditar producción sigue siendo una operación manual que
+requiere credenciales proporcionadas de forma temporal y autorización explícita.
 
 ## Provisioning de un entorno nuevo
 

@@ -20,6 +20,7 @@ const cleanEnvironment = Object.fromEntries(
         "PUBLIC_SITE_URL",
         "PUBLIC_SUPABASE_ANON_KEY",
         "PUBLIC_SUPABASE_URL",
+        "SUPABASE_AUDIT_DB_URL",
         "SUPABASE_DB_URL",
         "VERCEL_ENV",
       ].includes(name),
@@ -119,19 +120,22 @@ test("dist verification accepts a clean artifact", async () => {
 
 test("dist verification rejects private values and deploy hook markers", async () => {
   await withTemporaryDirectory(async (directory) => {
-    const secret = "postgresql://private-build-connection";
+    const buildSecret = "postgresql://private-build-connection";
+    const auditSecret = "postgresql://private-audit-connection";
     await mkdir(path.join(directory, "dist"));
     await writeFile(
       path.join(directory, "dist", "leak.js"),
-      `${secret}\nhttps://api.vercel.com/v1/integrations/deploy/example`,
+      `${buildSecret}\n${auditSecret}\nhttps://api.vercel.com/v1/integrations/deploy/example`,
     );
 
     const result = run(verifyScript, directory, {
-      SUPABASE_DB_URL: secret,
+      SUPABASE_AUDIT_DB_URL: auditSecret,
+      SUPABASE_DB_URL: buildSecret,
     });
 
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /Sensitive content was found/);
+    assert.match(result.stderr, /SUPABASE_AUDIT_DB_URL raw value/);
     assert.match(result.stderr, /SUPABASE_DB_URL raw value/);
     assert.match(result.stderr, /api\.vercel\.com/);
   });

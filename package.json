@@ -21,6 +21,7 @@
     "test:tools": "node scripts/run-test-suite.mjs tools",
     "test:db": "supabase test db",
     "verify:dist-secrets": "node scripts/verify-dist-secrets.mjs",
+    "supabase:audit": "node scripts/audit-supabase-readonly.mjs",
     "supabase": "supabase",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",

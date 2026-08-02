@@ -56,6 +56,7 @@ La URL local predeterminada es `http://localhost:4321`. El fixture es solo una f
 | `npm run supabase:start` | Inicia Supabase local. |
 | `npm run supabase:reset` | Reconstruye la base local desde migraciones y seed. |
 | `npm run test:db` | Ejecuta las pruebas SQL de Supabase. |
+| `npm run supabase:audit` | Audita la base y la exposición efectiva del Data API en modo read-only. |
 
 El runner descubre archivos en `tests/<suite>/**/*.test.mjs` y, por compatibilidad con scripts existentes, `scripts/test-<suite>-*.mjs`. Una suite vacía falla de forma intencional: CI nunca informa éxito si faltan sus pruebas.
 
@@ -80,6 +81,17 @@ npm run build
 ```
 
 `SUPABASE_DB_URL` es privada y se utiliza únicamente para obtener el snapshot editorial durante el build. Nunca debe llevar prefijo `PUBLIC_` ni llegar al navegador.
+
+### Auditoría remota
+
+```bash
+SUPABASE_AUDIT_DB_URL=postgresql://... \
+PUBLIC_SUPABASE_URL=https://PROJECT_REF.supabase.co \
+PUBLIC_SUPABASE_ANON_KEY=... \
+npm run supabase:audit
+```
+
+La auditoría ejecuta el contrato SQL dentro de una transacción read-only, comprueba el RPC público como control positivo y exige que `menu_content` y `app_private` permanezcan fuera del Data API. La credencial de auditoría es privada, privilegiada y distinta de la identidad mínima usada por el build.
 
 ## Criterios de seguridad
 

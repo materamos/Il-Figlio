@@ -109,6 +109,16 @@ jobs:
         if: steps.supabase.outputs.configured == 'true'
         run: npm run test:db
 
+      - name: Audit the local Supabase surface
+        if: steps.supabase.outputs.configured == 'true'
+        shell: bash
+        run: |
+          status_json="$(npx supabase status -o json)"
+          export PUBLIC_SUPABASE_URL="$(jq -er '.API_URL' <<<"$status_json")"
+          export PUBLIC_SUPABASE_ANON_KEY="$(jq -er '.ANON_KEY' <<<"$status_json")"
+          export SUPABASE_AUDIT_DB_URL="$(jq -er '.DB_URL' <<<"$status_json")"
+          npm run supabase:audit
+
       - name: Build against the local Supabase snapshot
         if: steps.supabase.outputs.configured == 'true'
         shell: bash
