@@ -346,9 +346,27 @@ h3 {
   color: var(--color-info);
 }
 
+.site-footer {
+  display: flex;
+  width: min(100% - 2rem, 70rem);
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-inline: auto;
+  border-top: 1px solid var(--color-border);
+  padding-block: var(--space-6);
+  color: var(--color-muted-ink);
+  font-size: 0.875rem;
+}
+
+.site-footer p {
+  margin: 0;
+}
+
 @media (min-width: 48rem) {
   .site-header,
-  .hero {
+  .hero,
+  .site-footer {
     width: min(100% - 4rem, 70rem);
   }
 

@@ -304,23 +304,6 @@
   gap: var(--space-3);
 }
 
-.site-footer {
-  display: flex;
-  width: min(100% - 2rem, 70rem);
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-inline: auto;
-  border-top: 1px solid var(--color-border);
-  padding-block: var(--space-6);
-  color: var(--color-muted-ink);
-  font-size: 0.875rem;
-}
-
-.site-footer p {
-  margin: 0;
-}
-
 @media (max-width: 47.99rem) {
   .menu-section__price-headings {
     display: grid;
@@ -376,8 +359,7 @@
 }
 
 @media (min-width: 48rem) {
-  .contact-section__inner,
-  .site-footer {
+  .contact-section__inner {
     width: min(100% - 4rem, 70rem);
   }
 
