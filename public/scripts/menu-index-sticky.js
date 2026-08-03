@@ -79,7 +79,7 @@ const getStickyActivationOffset = () => {
   return Number.parseFloat(value) || 0;
 };
 
-const getStickyMenuIndexBottom = () => menuIndex.getBoundingClientRect().height;
+const getStickyMenuIndexBottom = () => menuIndex.getBoundingClientRect().bottom;
 
 const getScrollBehavior = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";

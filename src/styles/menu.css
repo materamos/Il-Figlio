@@ -42,6 +42,31 @@
   display: block;
 }
 
+@media (max-width: 47.999rem) {
+  .menu-page > .site-header {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: calc(var(--layer-sticky) + 1);
+    background: var(--color-canvas);
+  }
+
+  .menu-index {
+    inset-block-start: 4.75rem;
+  }
+
+  .menu-index--stuck {
+    padding-block: var(--space-3);
+  }
+
+  .menu-index--stuck .menu-index__brand {
+    display: none;
+  }
+
+  .menu-section {
+    scroll-margin-top: 10.75rem;
+  }
+}
+
 .menu-index__title {
   position: absolute;
   width: 1px;
