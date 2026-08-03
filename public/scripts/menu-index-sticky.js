@@ -1,6 +1,8 @@
 const menuIndex = document.querySelector(".menu-index");
 const menuIndexSentinel = document.querySelector("[data-menu-index-sentinel]");
 const menuIndexList = menuIndex?.querySelector(".menu-index__list");
+const menuIndexBrand = menuIndex?.querySelector(".menu-index__brand");
+const menuHeaderBrand = document.querySelector(".site-header__mark");
 const menuIndexLinks = Array.from(menuIndex?.querySelectorAll(".menu-index__link") ?? []);
 const menuSectionTargets = menuIndexLinks
   .map((link) => {
@@ -39,34 +41,67 @@ const shouldAnimateMenuIndexPosition = () =>
   window.matchMedia("(min-width: 56rem)").matches &&
   !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+const shouldAnimateMenuIndexBrand = () =>
+  shouldAnimateMenuIndexPosition() &&
+  menuIndexBrand &&
+  menuHeaderBrand &&
+  typeof menuIndexBrand.animate === "function";
+
+const menuIndexMotion = {
+  duration: 220,
+  easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+};
+
 const setMenuIndexStuck = (isStuck) => {
   if (!menuIndex || menuIndex.classList.contains("menu-index--stuck") === isStuck) {
     return;
   }
 
   const animatePosition = shouldAnimateMenuIndexPosition();
+  const animateBrand = isStuck && shouldAnimateMenuIndexBrand();
   const previousLeft = animatePosition ? menuIndexList.getBoundingClientRect().left : 0;
+  const previousBrandRect = animateBrand ? menuHeaderBrand.getBoundingClientRect() : undefined;
 
   menuIndexList?.getAnimations().forEach((animation) => animation.cancel());
+  menuIndexBrand?.getAnimations().forEach((animation) => animation.cancel());
   menuIndex.classList.toggle("menu-index--stuck", isStuck);
 
-  if (!animatePosition) {
+  if (animatePosition) {
+    const nextLeft = menuIndexList.getBoundingClientRect().left;
+    const delta = previousLeft - nextLeft;
+
+    if (Math.abs(delta) >= 1) {
+      menuIndexList.animate(
+        [{ transform: `translateX(${delta}px)` }, { transform: "translateX(0)" }],
+        menuIndexMotion,
+      );
+    }
+  }
+
+  if (!animateBrand || !previousBrandRect) {
     return;
   }
 
-  const nextLeft = menuIndexList.getBoundingClientRect().left;
-  const delta = previousLeft - nextLeft;
+  const nextBrandRect = menuIndexBrand.getBoundingClientRect();
 
-  if (Math.abs(delta) < 1) {
+  if (nextBrandRect.width === 0 || nextBrandRect.height === 0) {
     return;
   }
 
-  menuIndexList.animate(
-    [{ transform: `translateX(${delta}px)` }, { transform: "translateX(0)" }],
-    {
-      duration: 220,
-      easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-    },
+  const deltaX = previousBrandRect.left - nextBrandRect.left;
+  const deltaY = previousBrandRect.top - nextBrandRect.top;
+  const scale = previousBrandRect.width / nextBrandRect.width;
+
+  menuIndexBrand.animate(
+    [
+      {
+        opacity: 0.88,
+        transform: `translate(${deltaX}px, ${deltaY}px) scale(${scale})`,
+        transformOrigin: "top left",
+      },
+      { opacity: 1, transform: "translate(0, 0) scale(1)", transformOrigin: "top left" },
+    ],
+    menuIndexMotion,
   );
 };
 
