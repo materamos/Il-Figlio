@@ -33,8 +33,41 @@ const getMaxScrollY = () => {
   return Math.max(0, scrollingElement.scrollHeight - window.innerHeight);
 };
 
+const shouldAnimateMenuIndexPosition = () =>
+  menuIndexList &&
+  typeof menuIndexList.animate === "function" &&
+  window.matchMedia("(min-width: 56rem)").matches &&
+  !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 const setMenuIndexStuck = (isStuck) => {
+  if (!menuIndex || menuIndex.classList.contains("menu-index--stuck") === isStuck) {
+    return;
+  }
+
+  const animatePosition = shouldAnimateMenuIndexPosition();
+  const previousLeft = animatePosition ? menuIndexList.getBoundingClientRect().left : 0;
+
+  menuIndexList?.getAnimations().forEach((animation) => animation.cancel());
   menuIndex.classList.toggle("menu-index--stuck", isStuck);
+
+  if (!animatePosition) {
+    return;
+  }
+
+  const nextLeft = menuIndexList.getBoundingClientRect().left;
+  const delta = previousLeft - nextLeft;
+
+  if (Math.abs(delta) < 1) {
+    return;
+  }
+
+  menuIndexList.animate(
+    [{ transform: `translateX(${delta}px)` }, { transform: "translateX(0)" }],
+    {
+      duration: 220,
+      easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+    },
+  );
 };
 
 const getStickyActivationOffset = () => {
