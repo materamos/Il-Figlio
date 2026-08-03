@@ -47,7 +47,18 @@
     position: sticky;
     inset-block-start: 0;
     z-index: calc(var(--layer-sticky) + 1);
+    justify-content: end;
     background: var(--color-canvas);
+  }
+
+  .menu-page > .site-header .site-header__brand {
+    position: absolute;
+    inset-inline-start: 50%;
+    translate: -50% 0;
+  }
+
+  .menu-page > .site-header .site-header__name {
+    display: none;
   }
 
   .menu-index {
