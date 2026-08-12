@@ -3,8 +3,6 @@
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("Il Figlio")
-    .addItem("Preparar editor móvil", "upgradeSheetExperience")
-    .addItem("Revisar cambios", "validateDraft")
     .addItem("Publicar cambios", "publishChanges")
     .addSeparator()
     .addItem("Restaurar formato", "restoreEditorFormatting")

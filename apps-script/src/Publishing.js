@@ -22,6 +22,7 @@ function handlePublishEdit(event) {
   if (isDraftEditSheetName_(sheetName)) {
     return withScriptLock_(function () {
       if (editorV2CategoryBySheetName_(sheetName)) {
+        normalizeEditorV2ProductNamesForRange_(event.range);
         ensureEditorV2ItemIds_(getProjectSpreadsheet_());
       }
       markDraftDirty_();

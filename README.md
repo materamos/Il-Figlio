@@ -81,6 +81,7 @@ PUBLIC_SITE_URL=https://il-figlio.vercel.app
 ## Publicación editorial
 
 1. Editar la pestaña de la categoría correspondiente. El orden se toma de las filas y `Mostrar` permite ocultar un producto sin eliminarlo.
+   Los nombres se normalizan en la propia planilla (por ejemplo, `fugazza CON mozzarella` pasa a `Fugazza con mozzarella`).
 2. Cambiar `Estado` o el mensaje público desde `Local` si hace falta.
 3. En `Publicar`, activar la casilla `Publicar cambios` (`B2`).
 4. Apps Script valida toda la planilla.

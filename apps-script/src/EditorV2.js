@@ -324,6 +324,7 @@ function finishEditorV2Setup_(spreadsheet, normalizeDashboard) {
   EDITOR_V2_CATEGORY_DEFINITIONS.forEach(function (definition) {
     setupV2CategorySheet_(requiredSheet_(spreadsheet, definition.sheetName), definition);
   });
+  normalizeAllEditorV2ProductNames_(spreadsheet);
   ensureEditorV2ItemIds_(spreadsheet);
   orderV2Sheets_(spreadsheet);
   hideLegacySheets_(spreadsheet);
@@ -348,6 +349,7 @@ function restoreEditorFormatting() {
     EDITOR_V2_CATEGORY_DEFINITIONS.forEach(function (definition) {
       setupV2CategorySheet_(requiredSheet_(spreadsheet, definition.sheetName), definition);
     });
+    normalizeAllEditorV2ProductNames_(spreadsheet);
     ensureEditorV2ItemIds_(spreadsheet);
     renderPublicationDashboard_();
     spreadsheet.toast("Formato y controles restaurados.", "Il Figlio", 5);
@@ -775,6 +777,7 @@ function isEmptyEditorV2Row_(row, definition) {
 }
 
 function readAndValidateEditorV2Draft_(spreadsheet) {
+  normalizeAllEditorV2ProductNames_(spreadsheet);
   ensureEditorV2ItemIds_(spreadsheet);
   var matrices = {};
   EDITOR_V2_CATEGORY_DEFINITIONS.forEach(function (definition) {
@@ -785,6 +788,71 @@ function readAndValidateEditorV2Draft_(spreadsheet) {
   });
   var localValues = readSheetValues_(requiredSheet_(spreadsheet, APP_CONFIG.editorTabs.local), 2);
   return validateAndBuildEditorV2Draft_(matrices, localValues);
+}
+
+function normalizeEditorV2ProductName_(value) {
+  if (typeof value !== "string") return value;
+
+  var normalized = value.trim().replace(/\s+/g, " ").toLocaleLowerCase("es-AR");
+  var firstLetterIndex = normalized.search(/[a-záéíóúüñ]/i);
+  if (firstLetterIndex !== -1) {
+    normalized = normalized.slice(0, firstLetterIndex)
+      + normalized.charAt(firstLetterIndex).toLocaleUpperCase("es-AR")
+      + normalized.slice(firstLetterIndex + 1);
+  }
+
+  return normalized.replace(
+    /(?:[a-záéíóúüñ]\.){2,}[a-záéíóúüñ]?\.?/gi,
+    function (abbreviation) {
+      return abbreviation.toLocaleUpperCase("es-AR");
+    },
+  );
+}
+
+function normalizeEditorV2ProductNameValues_(values) {
+  var changed = false;
+  var normalizedValues = values.map(function (row) {
+    var original = row[0];
+    var normalized = normalizeEditorV2ProductName_(original);
+    if (normalized !== original) changed = true;
+    return [normalized];
+  });
+  return { values: normalizedValues, changed: changed };
+}
+
+function normalizeEditorV2ProductNamesForRange_(editedRange) {
+  if (!editedRange) return false;
+  var definition = editorV2CategoryBySheetName_(editedRange.getSheet().getName());
+  var firstDataRow = 2;
+  var firstNameColumn = 1;
+  if (
+    !definition
+      || editedRange.getLastRow() < firstDataRow
+      || editedRange.getColumn() > firstNameColumn
+      || editedRange.getLastColumn() < firstNameColumn
+  ) return false;
+
+  var firstRow = Math.max(firstDataRow, editedRange.getRow());
+  var nameRange = editedRange.getSheet().getRange(
+    firstRow,
+    firstNameColumn,
+    editedRange.getLastRow() - firstRow + 1,
+    1,
+  );
+  var normalized = normalizeEditorV2ProductNameValues_(nameRange.getValues());
+  if (normalized.changed) nameRange.setValues(normalized.values);
+  return normalized.changed;
+}
+
+function normalizeAllEditorV2ProductNames_(spreadsheet) {
+  EDITOR_V2_CATEGORY_DEFINITIONS.forEach(function (definition) {
+    var sheet = requiredSheet_(spreadsheet, definition.sheetName);
+    var lastRow = Math.max(1, sheet.getLastRow());
+    if (lastRow < 2) return;
+    var nameRange = sheet.getRange(2, 1, lastRow - 1, 1);
+    var normalized = normalizeEditorV2ProductNameValues_(nameRange.getValues());
+    if (normalized.changed) nameRange.setValues(normalized.values);
+  });
 }
 
 function ensureEditorV2ItemIds_(spreadsheet) {

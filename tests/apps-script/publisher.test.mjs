@@ -43,6 +43,7 @@ for (const fileName of [
   "EditorV2.js",
   "SheetReader.js",
   "Publishing.js",
+  "Code.js",
 ]) {
   const source = await readFile(path.join(scriptDir, fileName), "utf8");
   vm.runInContext(source, context, { filename: fileName });
@@ -72,6 +73,83 @@ const seededMenu = () => [
   ...plain(context.INITIAL_MENU_ROWS),
 ];
 const migratedEditor = () => plain(context.prepareV2MigrationData_(seededMenu(), validState()));
+
+test("the operator menu exposes only publishing and format recovery", () => {
+  const entries = [];
+  const menu = {
+    addItem(label, handler) {
+      entries.push(["item", label, handler]);
+      return this;
+    },
+    addSeparator() {
+      entries.push(["separator"]);
+      return this;
+    },
+    addToUi() {
+      entries.push(["done"]);
+    },
+  };
+  const previousSpreadsheetApp = context.SpreadsheetApp;
+  context.SpreadsheetApp = {
+    getUi: () => ({
+      createMenu: (label) => {
+        entries.push(["menu", label]);
+        return menu;
+      },
+    }),
+  };
+
+  try {
+    context.onOpen();
+  } finally {
+    context.SpreadsheetApp = previousSpreadsheetApp;
+  }
+
+  assert.deepEqual(plain(entries), [
+    ["menu", "Il Figlio"],
+    ["item", "Publicar cambios", "publishChanges"],
+    ["separator"],
+    ["item", "Restaurar formato", "restoreEditorFormatting"],
+    ["done"],
+  ]);
+});
+
+test("product names are normalized in the Sheet before publication", () => {
+  assert.equal(
+    context.normalizeEditorV2ProductName_("  fugazza   CON   MOZZARELLA "),
+    "Fugazza con mozzarella",
+  );
+  assert.equal(context.normalizeEditorV2ProductName_("c.b.o"), "C.B.O");
+  assert.equal(context.normalizeEditorV2ProductName_("AGLIO E OLIO"), "Aglio e olio");
+  assert.equal(context.normalizeEditorV2ProductName_("4 quesos"), "4 Quesos");
+  assert.equal(context.normalizeEditorV2ProductName_(1200), 1200);
+
+  const writes = [];
+  const nameRange = {
+    getValues: () => [["  jamón Y MORRONES "], ["c.b.o"]],
+    setValues: (values) => writes.push(plain(values)),
+  };
+  const sheet = {
+    getName: () => "Clásicas",
+    getRange: (row, column, rows, columns) => {
+      assert.deepEqual([row, column, rows, columns], [2, 1, 2, 1]);
+      return nameRange;
+    },
+  };
+  const editedRange = {
+    getSheet: () => sheet,
+    getRow: () => 1,
+    getLastRow: () => 3,
+    getColumn: () => 1,
+    getLastColumn: () => 2,
+  };
+
+  assert.equal(context.normalizeEditorV2ProductNamesForRange_(editedRange), true);
+  assert.deepEqual(writes, [[
+    ["Jamón y morrones"],
+    ["C.B.O"],
+  ]]);
+});
 
 test("the canonical seed maps all 24 products into the versioned wire shape", () => {
   const result = context.validateAndBuildDraft_(seededMenu(), validState());

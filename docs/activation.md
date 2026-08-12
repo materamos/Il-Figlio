@@ -49,6 +49,9 @@ Después del primer push, ejecuta `setupProject` una vez desde el editor de Apps
 - instalan el verificador periódico;
 - solicitan los permisos mínimos necesarios.
 
+El menú diario `Il Figlio` muestra únicamente `Publicar cambios` y `Restaurar formato`.
+La validación del borrador se ejecuta automáticamente al publicar.
+
 El archivo de snapshot se crea en Drive al preparar la primera publicación válida.
 La copia servida por el web app se guarda fragmentada en Script Properties para
 evitar lecturas vacías inmediatamente después de escribir en Drive.

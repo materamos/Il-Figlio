@@ -41,7 +41,10 @@ app serves only the last validated JSON snapshot.
 
 - `Clásicas`, `Rellenas`, `Gourmet`, `Empanadas` and `Extras` hold products in
   short, category-specific tables. Row position defines order, `Mostrar` is a
-  checkbox, and the internal ID stays hidden and is repaired automatically.
+  checkbox, product names are normalized directly in the Sheet, and the internal
+  ID stays hidden and is repaired automatically.
+- The daily `Il Figlio` menu exposes only `Publicar cambios` and the recovery
+  action `Restaurar formato`. Draft validation remains part of every publication.
 - `Local` holds the global `Abierto`, `Cerrado` or `Agotado` state and an
   optional 160-character message.
 - Setting `Publicar!B2` to true publishes from desktop or mobile.
