@@ -407,6 +407,10 @@
 }
 
 @media (min-width: 48rem) {
+  .menu-whatsapp-button {
+    display: grid;
+  }
+
   .menu-content {
     width: min(100% - 4rem, 70rem);
   }
@@ -501,11 +505,5 @@
   .menu-index--stuck .menu-index__list {
     grid-column: 2;
     justify-content: end;
-  }
-}
-
-@media (min-width: 80rem) {
-  .menu-whatsapp-button {
-    display: grid;
   }
 }

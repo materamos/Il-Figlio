@@ -1,8 +1,10 @@
 # Il Figlio
 
-Landing y carta QR estática para Il Figlio. El contenido se edita en una Google Sheet privada, un Apps Script valida y publica un snapshot JSON, y Vercel reconstruye el sitio Astro cuando recibe el Deploy Hook.
+Landing y carta QR estática para Il Figlio. El contenido se edita en una
+Google Sheet privada, Apps Script valida y publica un snapshot JSON, y Vercel
+reconstruye el sitio Astro cuando recibe el Deploy Hook.
 
-## Arquitectura
+## Arquitectura activa
 
 ```text
 Google Sheet privada
@@ -12,7 +14,10 @@ Google Sheet privada
   -> build estático de Astro en Vercel
 ```
 
-La web no consulta Google durante la navegación. Landing, carta y estado del negocio quedan incorporados al HTML durante el build.
+La web no consulta Google durante la navegación. Landing, carta y estado del
+negocio quedan incorporados al HTML durante el build. No hay un administrador
+web propio ni Supabase en la arquitectura activa: la superficie editorial es la
+Google Sheet privada.
 
 Rutas públicas:
 
@@ -26,36 +31,60 @@ Rutas públicas:
 - npm `10` o superior.
 - Cuenta Google autorizada para operar `clasp` cuando se actualiza Apps Script.
 
-## Desarrollo local
+## Desarrollo local seguro
+
+Instala exactamente las versiones del lockfile:
 
 ```powershell
-npm install
-Copy-Item .env.example .env.local
+npm ci
+```
+
+Antes de reemplazar un `.env.local` existente, guarda una copia privada fuera
+del repositorio. Si el archivo todavía no existe, créalo desde el ejemplo:
+
+```powershell
+$envBackupRoot = Join-Path $env:LOCALAPPDATA "IlFiglio\env-backups"
+if (Test-Path -LiteralPath ".env.local") {
+  New-Item -ItemType Directory -Force -Path $envBackupRoot | Out-Null
+  $envBackupPath = Join-Path $envBackupRoot ("env-local-" + (Get-Date -Format "yyyyMMdd-HHmmss") + ".backup")
+  Copy-Item -LiteralPath ".env.local" -Destination $envBackupPath
+  Write-Output "Copia privada guardada en: $envBackupPath"
+} else {
+  Copy-Item -LiteralPath ".env.example" -Destination ".env.local"
+}
+
 npm run dev
 ```
 
-El fixture requiere un opt-in explícito:
-
-```powershell
-$env:MENU_DATA_SOURCE = "fixture"
-$env:ALLOW_FIXTURE_BUILD = "true"
-npm run build
-```
+La copia puede contener valores privados: no la compartas, no la muevas al
+repositorio y elimínala cuando deje de ser necesaria. `.env.example` activa el
+fixture solo para desarrollo local; producción usa el snapshot publicado.
 
 ## Comandos
 
 | Comando | Propósito |
 | --- | --- |
 | `npm run dev` | Inicia Astro en desarrollo. |
+| `npm run preview` | Sirve localmente un `dist/` ya generado. |
 | `npm run build` | Valida el entorno, genera `dist/` y comprueba el artefacto. |
 | `npm run check` | Valida Astro y TypeScript. |
 | `npm run check:js` | Comprueba la sintaxis JavaScript. |
 | `npm run lint` | Ejecuta ESLint. |
-| `npm test` | Ejecuta pruebas del menú, Apps Script y tooling. |
-| `npm run apps-script:status` | Muestra qué archivos enviaría `clasp`. |
-| `npm run apps-script:push` | Actualiza el Apps Script vinculado. |
+| `npm test` | Ejecuta las suites de menú, Apps Script y tooling. |
+| `npm run test:menu` | Ejecuta las pruebas del contrato y las rutas públicas. |
+| `npm run test:apps-script` | Ejecuta las pruebas del publicador de Apps Script. |
+| `npm run test:tools` | Ejecuta las pruebas de los guardas de build y secretos. |
+| `npm run verify:dist-secrets` | Comprueba un `dist/` existente en busca de valores privados. |
+| `npm run apps-script:status` | Lista los archivos locales que `clasp` consideraría para un push; no compara con el proyecto remoto. |
+| `npm run apps-script:deployments` | Lista las implementaciones del Apps Script vinculado. |
+| `npm run apps-script:push` | Sustituye el código remoto con el contenido local autorizado. |
 | `npm run apps-script:open` | Abre el Apps Script vinculado. |
-| `npm run apps-script:update-deployment -- DEPLOYMENT_ID --versionNumber VERSION` | Actualiza la implementación web existente sin cambiar su URL; requiere el ID y la versión. |
+| `npm run apps-script:update-deployment -- DEPLOYMENT_ID --versionNumber VERSION` | Actualiza la implementación web existente sin cambiar su URL. |
+
+Los `overrides` de `package.json` son pines transitivos de compatibilidad y
+seguridad. Deben reevaluarse junto con el lockfile cada vez que se actualicen
+dependencias; no se eliminan ni se modifican aisladamente sin verificar el árbol
+resultante y las pruebas.
 
 ## Fuentes de datos
 
@@ -76,28 +105,62 @@ MENU_SNAPSHOT_URL=https://script.google.com/macros/s/DEPLOYMENT_ID/exec
 PUBLIC_SITE_URL=https://il-figlio.vercel.app
 ```
 
-`MENU_SNAPSHOT_URL` se consume solamente durante el build y no llega al navegador. El snapshot se vuelve a validar en Node antes de generar las páginas.
+`MENU_SNAPSHOT_URL` se consume solamente durante el build y no llega al
+navegador. El snapshot se vuelve a validar en Node antes de generar las páginas.
 
 ## Publicación editorial
 
-1. Editar la pestaña de la categoría correspondiente. El orden se toma de las filas y `Mostrar` permite ocultar un producto sin eliminarlo.
-   Los nombres se normalizan en la propia planilla (por ejemplo, `fugazza CON mozzarella` pasa a `Fugazza con mozzarella`).
+1. Editar la pestaña de la categoría correspondiente. El orden se toma de las
+   filas y `Mostrar` permite ocultar un producto sin eliminarlo. Los nombres se
+   normalizan en la propia planilla.
 2. Cambiar `Estado` o el mensaje público desde `Local` si hace falta.
-3. En `Publicar`, activar la casilla `Publicar cambios` (`B2`).
+3. En `Publicar`, activar una vez `Publicar cambios` (`B2`).
 4. Apps Script valida toda la planilla.
-5. Si es válida, incrementa la revisión, actualiza el snapshot y llama al Deploy Hook.
+5. Si es válida, incrementa la revisión, actualiza el snapshot y llama al
+   Deploy Hook.
 6. Vercel construye el sitio con el snapshot nuevo.
-7. El verificador compara la revisión con `/publication.json` y confirma el resultado en la planilla.
+7. El verificador compara la revisión y el hash con `/publication.json` y
+   confirma el resultado en la planilla.
 
-Una respuesta exitosa del Deploy Hook solo significa que Vercel aceptó la solicitud. La publicación se considera terminada cuando `/publication.json` contiene la revisión y el hash esperados.
+Una respuesta exitosa del Deploy Hook solo significa que Vercel aceptó la
+solicitud. La publicación termina cuando la planilla muestra `Menú actualizado`
+después de confirmar la revisión y el hash servidos.
+
+## SEO actual
+
+- `public/robots.txt` permite el rastreo de todo el sitio.
+- Cuando `PUBLIC_SITE_URL` está definido, Astro lo usa como origen de las URL
+  canónicas y de la metadata social.
+- Hoy no hay un sitemap versionado ni una integración que lo genere.
 
 ## Seguridad
 
 - La Google Sheet permanece privada.
 - El web app expone solo el snapshot destinado a la carta pública.
-- El Deploy Hook vive en Script Properties; nunca en celdas ni en el repositorio.
+- El Deploy Hook vive en Script Properties; nunca en celdas ni en el
+  repositorio.
 - Las credenciales de `clasp` viven en el perfil local del usuario.
-- El navegador no recibe URLs de Google ni secretos de publicación.
-- `verify-dist-secrets` rechaza secretos y marcadores administrativos en `dist/`.
+- El navegador no recibe `MENU_SNAPSHOT_URL`, la URL del web app de Apps
+  Script ni secretos de publicación. El enlace público a Google Maps sí forma
+  parte de la sección de contacto.
+- `npm run verify:dist-secrets` rechaza secretos y marcadores administrativos
+  en `dist/`.
 
-Consulta [Arquitectura](docs/architecture.md) y [Activación](docs/activation.md) para el contrato y el runbook completos.
+## Documentación
+
+- [Arquitectura](docs/architecture.md): componentes, contrato del snapshot y
+  límites del sistema.
+- [Activación, operación y recuperación](docs/activation.md): runbook técnico
+  reproducible.
+- [Publicador de Apps Script](apps-script/README.md): contrato y preparación del
+  proyecto vinculado.
+- [Sistema visual](design-system/il-figlio/MASTER.md): tokens y criterios de UI.
+- [Fuentes del menú inicial](src/data/menu-source-notes.md): procedencia y
+  normalizaciones editoriales.
+
+La propiedad, aceptación y transferencia se registran fuera de Git en el
+runbook privado `00 Administracion/Operacion/runbook-operativo.md`. En una
+máquina configurada, `docs/project-context.local.md` indica dónde está la
+biblioteca documental; ese archivo es local, está ignorado y no debe contener
+secretos. El runbook anterior de Supabase se conserva únicamente como material
+histórico bajo `90 Archivo/Operacion/`.
