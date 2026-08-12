@@ -19,25 +19,18 @@ import BrandMark from "../components/BrandMark.astro";
     </header>
 
     <section class="not-found" aria-labelledby="not-found-title">
-      <div class="not-found__number" aria-hidden="true">
-        <span>4</span>
-        <BrandMark class="not-found__mark" decorative={true} size={256} />
-        <span>4</span>
-      </div>
+      <p class="not-found__number" aria-hidden="true">404</p>
 
       <div class="not-found__copy">
         <p class="section-eyebrow">Error 404</p>
         <h1 id="not-found-title">Esta página no está en la carta.</h1>
-        <p class="not-found__message">
-          El enlace puede haber cambiado, pero la pizza sigue acá.
-        </p>
         <a class="button button--primary" href="/carta/">Ver la carta</a>
       </div>
     </section>
 
     <footer class="not-found-footer">
       <p>Pizza al molde</p>
-      <p>Hecha en el barrio</p>
+      <p>Lanús Oeste</p>
     </footer>
   </main>
 </BaseLayout>

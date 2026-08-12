@@ -62,11 +62,13 @@ test("the not-found route keeps the branded recovery path minimal", async () => 
 
   assert.match(notFound, /bodyClass="not-found-body"/);
   assert.match(notFound, /aria-label="Il Figlio, volver al inicio"/);
-  assert.match(notFound, /class="not-found__number" aria-hidden="true"/);
+  assert.match(notFound, /class="not-found__number" aria-hidden="true">404<\/p>/);
+  assert.doesNotMatch(notFound, /class="not-found__mark"/);
+  assert.match(notFound, /<p>Lanús Oeste<\/p>/);
   assert.match(notFound, /href="\/carta\/">Ver la carta/);
   assert.doesNotMatch(notFound, /<style>/);
   assert.match(globalCss, /\.not-found-page\s*{/);
-  assert.match(globalCss, /\.not-found__mark\s*{/);
+  assert.doesNotMatch(globalCss, /\.not-found__mark\s*{/);
 });
 
 test("publication metadata is generated from the same immutable menu snapshot", async () => {
