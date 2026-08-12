@@ -570,3 +570,10 @@ test("both legacy and v2 publication checkboxes remain valid during migration", 
   assert.equal(context.isPublishEdit_(makeEvent("Publicacion")), true);
   assert.equal(context.isPublishEdit_(makeEvent("Publicar")), true);
 });
+
+test("the mobile editor uses locale-neutral numeric validation for prices", () => {
+  const source = context.setupV2CategorySheet_.toString();
+
+  assert.match(source, /requireNumberGreaterThan\(0\)/);
+  assert.doesNotMatch(source, /requireFormulaSatisfied\([\s\S]*?MOD\(/);
+});

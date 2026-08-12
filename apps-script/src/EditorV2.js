@@ -437,14 +437,10 @@ function setupV2CategorySheet_(sheet, definition) {
   sheet.getRange(2, 1, dataRows, 1).setDataValidation(nameRule).setWrap(true);
   definition.priceKinds.forEach(function (_kind, index) {
     var column = index + 2;
-    var letter = columnToLetter_(column);
     var priceRule = SpreadsheetApp.newDataValidation()
-      .requireFormulaSatisfied(
-        "=OR(" + letter + "2=\"\",AND(ISNUMBER(" + letter + "2),"
-          + letter + "2>0,MOD(" + letter + "2,1)=0))",
-      )
+      .requireNumberGreaterThan(0)
       .setAllowInvalid(false)
-      .setHelpText("Ingresá un precio entero mayor que cero, sin puntos ni centavos.")
+      .setHelpText("Ingresá un precio mayor que cero. También se revisará antes de publicar.")
       .build();
     sheet.getRange(2, column, dataRows, 1)
       .setDataValidation(priceRule)

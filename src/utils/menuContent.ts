@@ -24,8 +24,11 @@ import type {
 const SNAPSHOT_SCHEMA_VERSION = 1;
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_BYTES = 512 * 1024;
+const MAX_SNAPSHOT_ATTEMPTS = 2;
 const FIXTURE_PUBLISHED_AT = "2026-08-01T00:00:00.000Z";
 const SHA_256_HEX = /^[0-9a-f]{64}$/;
+
+class RetryableSnapshotRequestError extends Error {}
 
 type DatabasePriceMap = Partial<Record<MenuPriceKind, number>>;
 
@@ -78,51 +81,80 @@ export const fetchPublishedMenuSnapshot = async (
   snapshotUrl: string,
   options: FetchSnapshotOptions = {},
 ): Promise<PublishedMenuSnapshot> => {
-  const url = parseSnapshotUrl(snapshotUrl);
-  url.searchParams.set("_build", String(Date.now()));
-
+  const baseUrl = parseSnapshotUrl(snapshotUrl);
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  try {
-    const response = await fetchImpl(url, {
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-      redirect: "follow",
-      signal: controller.signal,
-    });
+  for (let attempt = 0; attempt < MAX_SNAPSHOT_ATTEMPTS; attempt += 1) {
+    const url = new URL(baseUrl);
+    url.searchParams.set("_build", `${Date.now()}-${attempt + 1}`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (!response.ok) {
-      throw new Error(`Menu snapshot request returned HTTP ${response.status}.`);
-    }
-
-    const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
-    if (!contentType.includes("application/json")) {
-      throw new Error("Menu snapshot response must use application/json.");
-    }
-
-    const body = await readLimitedResponseBody(response, maxBytes);
-    let rawSnapshot: unknown;
     try {
-      rawSnapshot = JSON.parse(body);
-    } catch (error) {
-      throw new Error("Menu snapshot response is not valid JSON.", { cause: error });
-    }
+      let response: Response;
+      try {
+        response = await fetchImpl(url, {
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+          redirect: "follow",
+          signal: controller.signal,
+        });
+      } catch (error) {
+        if (controller.signal.aborted) {
+          throw new RetryableSnapshotRequestError(
+            `Menu snapshot request timed out after ${timeoutMs}ms.`,
+            { cause: error },
+          );
+        }
+        throw new RetryableSnapshotRequestError(
+          "Menu snapshot request failed during transport.",
+          { cause: error },
+        );
+      }
 
-    return parsePublishedMenuSnapshot(rawSnapshot);
-  } catch (error) {
-    if (controller.signal.aborted) {
-      throw new Error(`Menu snapshot request timed out after ${timeoutMs}ms.`, {
-        cause: error,
-      });
+      if (!response.ok) {
+        const message = `Menu snapshot request returned HTTP ${response.status}.`;
+        if (isRetryableHttpStatus(response.status)) {
+          throw new RetryableSnapshotRequestError(message);
+        }
+        throw new Error(message);
+      }
+
+      const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+      if (!contentType.includes("application/json")) {
+        throw new Error("Menu snapshot response must use application/json.");
+      }
+
+      const body = await readLimitedResponseBody(response, maxBytes);
+      let rawSnapshot: unknown;
+      try {
+        rawSnapshot = JSON.parse(body);
+      } catch (error) {
+        throw new Error("Menu snapshot response is not valid JSON.", { cause: error });
+      }
+
+      return parsePublishedMenuSnapshot(rawSnapshot);
+    } catch (error) {
+      const requestError = controller.signal.aborted
+        && !(error instanceof RetryableSnapshotRequestError)
+        ? new RetryableSnapshotRequestError(
+          `Menu snapshot request timed out after ${timeoutMs}ms.`,
+          { cause: error },
+        )
+        : error;
+      const canRetry = requestError instanceof RetryableSnapshotRequestError
+        && attempt + 1 < MAX_SNAPSHOT_ATTEMPTS;
+      if (!canRetry) {
+        throw requestError;
+      }
+    } finally {
+      clearTimeout(timeout);
     }
-    throw error;
-  } finally {
-    clearTimeout(timeout);
   }
+
+  throw new Error("Menu snapshot request exhausted its attempts.");
 };
 
 export const parsePublishedMenuSnapshot = (
@@ -385,6 +417,12 @@ const parseSnapshotUrl = (value: string): URL => {
   }
   return url;
 };
+
+const isRetryableHttpStatus = (status: number): boolean =>
+  status === 404
+  || status === 408
+  || status === 429
+  || (status >= 500 && status <= 599);
 
 const readLimitedResponseBody = async (
   response: Response,

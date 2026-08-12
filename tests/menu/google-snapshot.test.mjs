@@ -128,18 +128,119 @@ test("fetches JSON with a cache buster and validates the response", async () => 
 
   assert.equal(result.content.items.length, 24);
   assert.equal(requests.length, 1);
-  assert.match(requests[0].url.toString(), /[?&]_build=\d+/);
+  assert.match(requests[0].url.toString(), /[?&]_build=\d+-1/);
   assert.equal(requests[0].init.cache, "no-store");
   assert.equal(requests[0].init.redirect, "follow");
 });
 
-test("fails on HTTP errors, non-JSON responses, oversized bodies, and timeouts", async () => {
+test("retries one transient HTTP 404 with a fresh cache buster", async () => {
+  const wire = buildWireSnapshot();
+  const requests = [];
+  const result = await fetchPublishedMenuSnapshot(
+    "https://script.google.com/macros/s/example/exec",
+    {
+      fetchImpl: async (url) => {
+        requests.push(new URL(url));
+        if (requests.length === 1) {
+          return new Response("not ready", { status: 404 });
+        }
+        return new Response(JSON.stringify(wire), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      },
+    },
+  );
+
+  assert.equal(result.content.items.length, 24);
+  assert.equal(requests.length, 2);
+  assert.notEqual(
+    requests[0].searchParams.get("_build"),
+    requests[1].searchParams.get("_build"),
+  );
+});
+
+test("retries one timeout and succeeds on the second attempt", async () => {
+  const wire = buildWireSnapshot();
+  let attempts = 0;
+  const result = await fetchPublishedMenuSnapshot(
+    "https://example.test/menu",
+    {
+      timeoutMs: 5,
+      fetchImpl: async (_url, init) => {
+        attempts += 1;
+        if (attempts === 1) {
+          return new Promise((_resolve, reject) => {
+            init.signal.addEventListener("abort", () => {
+              reject(new DOMException("Aborted", "AbortError"));
+            });
+          });
+        }
+        return new Response(JSON.stringify(wire), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      },
+    },
+  );
+
+  assert.equal(result.content.items.length, 24);
+  assert.equal(attempts, 2);
+});
+
+test("retries one transport failure and succeeds on the second attempt", async () => {
+  const wire = buildWireSnapshot();
+  let attempts = 0;
+  const result = await fetchPublishedMenuSnapshot(
+    "https://example.test/menu",
+    {
+      fetchImpl: async () => {
+        attempts += 1;
+        if (attempts === 1) {
+          throw new TypeError("fetch failed");
+        }
+        return new Response(JSON.stringify(wire), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      },
+    },
+  );
+
+  assert.equal(result.content.items.length, 24);
+  assert.equal(attempts, 2);
+});
+
+test("does not retry non-transient response validation errors", async () => {
+  let attempts = 0;
   await assert.rejects(
     () => fetchPublishedMenuSnapshot("https://example.test/menu", {
-      fetchImpl: async () => new Response("unavailable", { status: 503 }),
+      fetchImpl: async () => {
+        attempts += 1;
+        return new Response("{}", {
+          status: 200,
+          headers: { "Content-Type": "text/plain" },
+        });
+      },
+    }),
+    /application\/json/,
+  );
+
+  assert.equal(attempts, 1);
+});
+
+test("fails on HTTP errors, non-JSON responses, oversized bodies, and timeouts", async () => {
+  let transientHttpAttempts = 0;
+  await assert.rejects(
+    () => fetchPublishedMenuSnapshot("https://example.test/menu", {
+      fetchImpl: async () => {
+        transientHttpAttempts += 1;
+        return new Response("unavailable", { status: 503 });
+      },
     }),
     /HTTP 503/,
   );
+  assert.equal(transientHttpAttempts, 2);
 
   await assert.rejects(
     () => fetchPublishedMenuSnapshot("https://example.test/menu", {
