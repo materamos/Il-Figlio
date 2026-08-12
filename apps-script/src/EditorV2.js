@@ -557,18 +557,23 @@ function setupV2PublicationSheet_(sheet) {
   sheet.getRange("A2:A11").setFontWeight("bold").setWrap(true);
   sheet.getRange("B2").setHorizontalAlignment("center");
   sheet.getRange("B3:B5").setWrap(true);
-  sheet.getRange("A13:B17").setValues([
+  sheet.getRange("A13:B17")
+    .clearContent()
+    .setBackground("#ffffff")
+    .setFontColor("#171717")
+    .setFontWeight("normal")
+    .setHorizontalAlignment("left");
+  sheet.getRange("A13:B15").setValues([
     ["Cómo actualizar el menú", ""],
     ["1", "Editá una categoría."],
-    ["2", "Desmarcá Mostrar para ocultar un producto."],
-    ["3", "Arrastrá la fila para cambiar el orden."],
-    ["4", "Volvé aquí y marcá Publicar cambios."],
+    ["2", "Volvé aquí y marcá Publicar cambios."],
   ]).setWrap(true);
   sheet.getRange("A13:B13").setBackground("#b80000").setFontColor("#ffffff").setFontWeight("bold");
-  sheet.getRange("A14:A17").setBackground("#f3efed").setFontWeight("bold").setHorizontalAlignment("center");
-  sheet.getRange("B14:B17").setBackground("#fff9f7");
+  sheet.getRange("A14:A15").setBackground("#f3efed").setFontWeight("bold").setHorizontalAlignment("center");
+  sheet.getRange("B14:B15").setBackground("#fff9f7");
   sheet.setRowHeight(13, 44);
-  sheet.setRowHeights(14, 4, 48);
+  sheet.setRowHeights(14, 2, 48);
+  sheet.setRowHeights(16, 2, 21);
   sheet.setConditionalFormatRules([
     SpreadsheetApp.newConditionalFormatRule()
       .whenTextEqualTo("Menú actualizado")
@@ -608,7 +613,26 @@ function setupV2PublicationSheet_(sheet) {
   replaceWarningProtection_(sheet, "Il Figlio: encabezado Publicar", sheet.getRange("A1:B1"));
   replaceWarningProtection_(sheet, "Il Figlio: etiquetas Publicar", sheet.getRange("A2:A11"));
   replaceWarningProtection_(sheet, "Il Figlio: estado Publicar", sheet.getRange("B3:B11"));
-  replaceWarningProtection_(sheet, "Il Figlio: instrucciones Publicar", sheet.getRange("A13:B17"));
+  replaceWarningProtection_(sheet, "Il Figlio: instrucciones Publicar", sheet.getRange("A13:B15"));
+  PropertiesService.getScriptProperties().setProperty(
+    SCRIPT_PROPERTY_KEYS.publicationLayoutVersion,
+    String(APP_CONFIG.publicationLayoutVersion),
+  );
+}
+
+function ensureV2PublicationLayoutCurrent_() {
+  var properties = PropertiesService.getScriptProperties();
+  if (
+    properties.getProperty(SCRIPT_PROPERTY_KEYS.publicationLayoutVersion)
+      === String(APP_CONFIG.publicationLayoutVersion)
+  ) return false;
+
+  var spreadsheet = getProjectSpreadsheet_();
+  if (detectSheetSchema_(spreadsheet) !== "v2") return false;
+  setupV2PublicationSheet_(
+    requiredSheet_(spreadsheet, APP_CONFIG.editorTabs.publication),
+  );
+  return true;
 }
 
 function ensureMinimumRows_(sheet, requiredRows) {

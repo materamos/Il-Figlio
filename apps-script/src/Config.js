@@ -2,6 +2,7 @@
 
 var APP_CONFIG = Object.freeze({
   sheetSchemaVersion: 2,
+  publicationLayoutVersion: 2,
   spreadsheetLocale: "es_AR",
   timeZone: "America/Argentina/Buenos_Aires",
   snapshotFileName: "published-menu.json",
@@ -144,6 +145,7 @@ var SCRIPT_PROPERTY_KEYS = Object.freeze({
   draftDirty: "DRAFT_DIRTY",
   sheetSchemaVersion: "SHEET_SCHEMA_VERSION",
   sheetV1BackupFileId: "SHEET_V1_BACKUP_FILE_ID",
+  publicationLayoutVersion: "PUBLICATION_LAYOUT_VERSION",
 });
 
 var SNAPSHOT_SLOTS = Object.freeze(["A", "B"]);

@@ -107,6 +107,7 @@ function publishChanges() {
 
 function verifyPublishedRevision() {
   return withScriptLock_(function () {
+    ensureV2PublicationLayoutCurrent_();
     var properties = PropertiesService.getScriptProperties();
     var pendingRevision = parseStoredPositiveInteger_(
       properties.getProperty(SCRIPT_PROPERTY_KEYS.pendingRevision),

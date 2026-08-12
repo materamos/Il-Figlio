@@ -114,6 +114,20 @@ test("the operator menu exposes only publishing and format recovery", () => {
   ]);
 });
 
+test("publication instructions keep only the two essential steps", () => {
+  const source = context.setupV2PublicationSheet_.toString();
+
+  assert.match(source, /\["1", "Editá una categoría\."\]/);
+  assert.match(source, /\["2", "Volvé aquí y marcá Publicar cambios\."\]/);
+  assert.doesNotMatch(source, /Desmarcá Mostrar/);
+  assert.doesNotMatch(source, /Arrastrá la fila/);
+  assert.match(source, /getRange\("A13:B15"\)\.setValues/);
+  assert.match(
+    context.verifyPublishedRevision.toString(),
+    /ensureV2PublicationLayoutCurrent_\(\)/,
+  );
+});
+
 test("product names are normalized in the Sheet before publication", () => {
   assert.equal(
     context.normalizeEditorV2ProductName_("  fugazza   CON   MOZZARELLA "),
