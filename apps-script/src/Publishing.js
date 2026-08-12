@@ -32,6 +32,11 @@ function publishChanges() {
 
     if (pendingRevision !== null) {
       var pendingHash = properties.getProperty(SCRIPT_PROPERTY_KEYS.pendingHash);
+      var availableSnapshot = readSnapshotContents_();
+      if (!snapshotMatches_(availableSnapshot, pendingRevision, pendingHash)) {
+        var recovery = recoverPendingSnapshot_(properties, pendingRevision, pendingHash);
+        if (!recovery.ok) return recovery;
+      }
       setDashboardState_(
         "Reintentando revisión " + pendingRevision,
         "La revisión pendiente se enviará otra vez; los cambios posteriores siguen como borrador.",
@@ -224,20 +229,121 @@ function keepPublicationPending_(properties, revision, reason) {
 }
 
 function writeSnapshotFile_(contents) {
+  if (!contents) throw new Error("El snapshot publicado no puede estar vacío.");
+
   var properties = PropertiesService.getScriptProperties();
   var fileId = properties.getProperty(SCRIPT_PROPERTY_KEYS.snapshotFileId);
   if (fileId) {
     DriveApp.getFileById(fileId).setContent(contents);
-    return fileId;
+  } else {
+    var file = DriveApp.createFile(
+      APP_CONFIG.snapshotFileName,
+      contents,
+      MimeType.PLAIN_TEXT,
+    );
+    fileId = file.getId();
+    properties.setProperty(SCRIPT_PROPERTY_KEYS.snapshotFileId, fileId);
   }
 
-  var file = DriveApp.createFile(
-    APP_CONFIG.snapshotFileName,
-    contents,
-    MimeType.PLAIN_TEXT,
+  writeSnapshotChunks_(properties, contents);
+  return fileId;
+}
+
+function recoverPendingSnapshot_(properties, revision, expectedHash) {
+  var validation = readAndValidateDraft_();
+  highlightValidationIssues_(validation.issues);
+  if (!validation.ok) {
+    setDashboardState_(
+      "No se pudo recuperar la revisión " + revision,
+      "El snapshot no está disponible y el borrador actual tiene errores de validación.",
+    );
+    renderPublicationDashboard_();
+    return { ok: false, reason: "pending_snapshot_validation", issues: validation.issues };
+  }
+
+  var publishedAt = properties.getProperty(SCRIPT_PROPERTY_KEYS.pendingRequestedAt)
+    || new Date().toISOString();
+  var snapshot = buildPublishedSnapshot_(validation.draft, revision, publishedAt);
+  if (snapshot.source_hash !== expectedHash) {
+    setDashboardState_(
+      "No se pudo recuperar la revisión " + revision,
+      "El borrador cambió después de preparar esa revisión. Corregí los cambios antes de reintentar.",
+    );
+    renderPublicationDashboard_();
+    return { ok: false, reason: "pending_snapshot_mismatch", revision: revision };
+  }
+
+  writeSnapshotFile_(JSON.stringify(snapshot));
+  return { ok: true, revision: revision };
+}
+
+function snapshotMatches_(contents, revision, sourceHash) {
+  var snapshot = contents ? parseJsonOrNull_(contents) : null;
+  return Boolean(
+    snapshot
+      && snapshot.schema_version === 1
+      && snapshot.revision === revision
+      && snapshot.source_hash === sourceHash,
   );
-  properties.setProperty(SCRIPT_PROPERTY_KEYS.snapshotFileId, file.getId());
-  return file.getId();
+}
+
+function writeSnapshotChunks_(properties, contents) {
+  var chunks = encodeSnapshotChunks_(contents);
+  var previousCount = parseStoredNonNegativeInteger_(
+    properties.getProperty(SCRIPT_PROPERTY_KEYS.snapshotChunkCount),
+  );
+  var values = {};
+  values[SCRIPT_PROPERTY_KEYS.snapshotChunkCount] = String(chunks.length);
+  chunks.forEach(function (chunk, index) {
+    values[SNAPSHOT_CHUNK_KEY_PREFIX + index] = chunk;
+  });
+  properties.setProperties(values);
+
+  for (var index = chunks.length; index < previousCount; index += 1) {
+    properties.deleteProperty(SNAPSHOT_CHUNK_KEY_PREFIX + index);
+  }
+}
+
+function readSnapshotContents_() {
+  var properties = PropertiesService.getScriptProperties();
+  var count = parseStoredPositiveInteger_(
+    properties.getProperty(SCRIPT_PROPERTY_KEYS.snapshotChunkCount),
+  );
+  var maxChunks = Math.ceil(
+    APP_CONFIG.snapshotMaxEncodedChars / APP_CONFIG.snapshotChunkSize,
+  );
+  if (count === null || count > maxChunks) return null;
+
+  var chunks = [];
+  for (var index = 0; index < count; index += 1) {
+    var chunk = properties.getProperty(SNAPSHOT_CHUNK_KEY_PREFIX + index);
+    if (!chunk) return null;
+    chunks.push(chunk);
+  }
+  return decodeSnapshotChunks_(chunks);
+}
+
+function encodeSnapshotChunks_(contents) {
+  var encoded = Utilities.base64Encode(contents, Utilities.Charset.UTF_8);
+  if (encoded.length > APP_CONFIG.snapshotMaxEncodedChars) {
+    throw new Error("El snapshot supera el límite de almacenamiento del publicador.");
+  }
+
+  var chunks = [];
+  for (var offset = 0; offset < encoded.length; offset += APP_CONFIG.snapshotChunkSize) {
+    chunks.push(encoded.slice(offset, offset + APP_CONFIG.snapshotChunkSize));
+  }
+  return chunks;
+}
+
+function decodeSnapshotChunks_(chunks) {
+  try {
+    var encoded = chunks.join("");
+    return Utilities.newBlob(Utilities.base64Decode(encoded))
+      .getDataAsString("UTF-8");
+  } catch (_error) {
+    return null;
+  }
 }
 
 function isPublishEdit_(event) {

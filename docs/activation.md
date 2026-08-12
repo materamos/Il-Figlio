@@ -47,6 +47,8 @@ Después del primer push, ejecuta `setupProject` una vez desde el editor de Apps
 - solicita los permisos mínimos necesarios.
 
 El archivo de snapshot se crea en Drive al preparar la primera publicación válida.
+La copia servida por el web app se guarda fragmentada en Script Properties para
+evitar lecturas vacías inmediatamente después de escribir en Drive.
 
 ## 4. Configuración privada
 

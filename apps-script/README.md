@@ -45,8 +45,10 @@ app serves only the last validated JSON snapshot.
   revision is pending. Rechecking `B2` retries that same revision; newer sheet
   edits remain a draft until `/publication.json` confirms the pending revision
   and SHA-256 hash.
-- The web app implements only `GET`. The Drive file remains private and the
-  endpoint exposes only menu data that is destined for the public site.
+- The web app implements only `GET`. A private Drive file remains as the owner
+  backup; the served copy is stored in size-bounded, base64 chunks in private
+  Script Properties to avoid Drive read-after-write inconsistencies. The
+  endpoint exposes only menu data destined for the public site.
 
 The wire schema is versioned as `schema_version: 1`. Its `source_hash` is the
 SHA-256 of the UTF-8 `JSON.stringify` output for the canonical object containing

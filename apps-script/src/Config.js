@@ -4,6 +4,8 @@ var APP_CONFIG = Object.freeze({
   spreadsheetLocale: "es_AR",
   timeZone: "America/Argentina/Buenos_Aires",
   snapshotFileName: "published-menu.json",
+  snapshotChunkSize: 7000,
+  snapshotMaxEncodedChars: 420000,
   publicationTimeoutMs: 15 * 60 * 1000,
   tabs: Object.freeze({
     menu: "Carta",
@@ -81,6 +83,7 @@ var STATUS_BY_SHEET_LABEL = Object.freeze({
 var SCRIPT_PROPERTY_KEYS = Object.freeze({
   spreadsheetId: "SPREADSHEET_ID",
   snapshotFileId: "SNAPSHOT_FILE_ID",
+  snapshotChunkCount: "SNAPSHOT_CHUNK_COUNT",
   deployHookUrl: "VERCEL_DEPLOY_HOOK_URL",
   publicSiteUrl: "PUBLIC_SITE_URL",
   publishedRevision: "PUBLISHED_REVISION",
@@ -93,6 +96,8 @@ var SCRIPT_PROPERTY_KEYS = Object.freeze({
   dashboardDetail: "DASHBOARD_DETAIL",
   draftDirty: "DRAFT_DIRTY",
 });
+
+var SNAPSHOT_CHUNK_KEY_PREFIX = "SNAPSHOT_CHUNK_";
 
 var PUBLICATION_CELLS = Object.freeze({
   publish: "B2",

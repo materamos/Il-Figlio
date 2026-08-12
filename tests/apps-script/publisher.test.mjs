@@ -18,6 +18,17 @@ const context = vm.createContext({
       return [...createHash("sha256").update(value, "utf8").digest()]
         .map((byte) => (byte > 127 ? byte - 256 : byte));
     },
+    base64Encode(value) {
+      return Buffer.from(value, "utf8").toString("base64");
+    },
+    base64Decode(value) {
+      return Buffer.from(value, "base64");
+    },
+    newBlob(value) {
+      return {
+        getDataAsString: () => Buffer.from(value).toString("utf8"),
+      };
+    },
   },
 });
 
@@ -175,6 +186,23 @@ test("a confirmed revision keeps later Sheet edits visibly unpublished", () => {
     status: "Cambios sin publicar",
     detail: "La revisión 4 está publicada, pero hay cambios posteriores que siguen en borrador.",
   });
+});
+
+test("published JSON survives private property chunking without Unicode loss", () => {
+  const contents = JSON.stringify({
+    schema_version: 1,
+    description: "Mozzarella, jamón y rúcula. ".repeat(700),
+  });
+  const chunks = plain(context.encodeSnapshotChunks_(contents));
+
+  assert.ok(chunks.length > 1);
+  assert.ok(chunks.every((chunk) => chunk.length <= context.APP_CONFIG.snapshotChunkSize));
+  assert.equal(context.decodeSnapshotChunks_(chunks), contents);
+  assert.equal(context.snapshotMatches_(JSON.stringify({
+    schema_version: 1,
+    revision: 7,
+    source_hash: "a".repeat(64),
+  }), 7, "a".repeat(64)), true);
 });
 
 test("only a checked Publicacion B2 edit is treated as a publish request", () => {
