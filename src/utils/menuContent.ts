@@ -24,7 +24,8 @@ import type {
 const SNAPSHOT_SCHEMA_VERSION = 1;
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_BYTES = 512 * 1024;
-const MAX_SNAPSHOT_ATTEMPTS = 2;
+const MAX_SNAPSHOT_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 1_000;
 const FIXTURE_PUBLISHED_AT = "2026-08-01T00:00:00.000Z";
 const SHA_256_HEX = /^[0-9a-f]{64}$/;
 
@@ -64,6 +65,7 @@ interface FetchSnapshotOptions {
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   maxBytes?: number;
+  waitForRetry?: (delayMs: number) => Promise<void>;
 }
 
 let configuredSnapshotPromise: Promise<PublishedMenuSnapshot> | undefined;
@@ -85,6 +87,7 @@ export const fetchPublishedMenuSnapshot = async (
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
+  const waitForRetry = options.waitForRetry ?? delay;
 
   for (let attempt = 0; attempt < MAX_SNAPSHOT_ATTEMPTS; attempt += 1) {
     const url = new URL(baseUrl);
@@ -152,6 +155,8 @@ export const fetchPublishedMenuSnapshot = async (
     } finally {
       clearTimeout(timeout);
     }
+
+    await waitForRetry(RETRY_BASE_DELAY_MS * (2 ** attempt));
   }
 
   throw new Error("Menu snapshot request exhausted its attempts.");
@@ -423,6 +428,9 @@ const isRetryableHttpStatus = (status: number): boolean =>
   || status === 408
   || status === 429
   || (status >= 500 && status <= 599);
+
+const delay = (delayMs: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, delayMs));
 
 const readLimitedResponseBody = async (
   response: Response,

@@ -133,15 +133,16 @@ test("fetches JSON with a cache buster and validates the response", async () => 
   assert.equal(requests[0].init.redirect, "follow");
 });
 
-test("retries one transient HTTP 404 with a fresh cache buster", async () => {
+test("retries transient HTTP 404s with fresh cache busters and progressive delays", async () => {
   const wire = buildWireSnapshot();
   const requests = [];
+  const retryDelays = [];
   const result = await fetchPublishedMenuSnapshot(
     "https://script.google.com/macros/s/example/exec",
     {
       fetchImpl: async (url) => {
         requests.push(new URL(url));
-        if (requests.length === 1) {
+        if (requests.length < 3) {
           return new Response("not ready", { status: 404 });
         }
         return new Response(JSON.stringify(wire), {
@@ -149,14 +150,18 @@ test("retries one transient HTTP 404 with a fresh cache buster", async () => {
           headers: { "Content-Type": "application/json" },
         });
       },
+      waitForRetry: async (delayMs) => {
+        retryDelays.push(delayMs);
+      },
     },
   );
 
   assert.equal(result.content.items.length, 24);
-  assert.equal(requests.length, 2);
-  assert.notEqual(
-    requests[0].searchParams.get("_build"),
-    requests[1].searchParams.get("_build"),
+  assert.equal(requests.length, 3);
+  assert.deepEqual(retryDelays, [1_000, 2_000]);
+  assert.equal(
+    new Set(requests.map((request) => request.searchParams.get("_build"))).size,
+    3,
   );
 });
 
@@ -167,6 +172,7 @@ test("retries one timeout and succeeds on the second attempt", async () => {
     "https://example.test/menu",
     {
       timeoutMs: 5,
+      waitForRetry: async () => {},
       fetchImpl: async (_url, init) => {
         attempts += 1;
         if (attempts === 1) {
@@ -194,6 +200,7 @@ test("retries one transport failure and succeeds on the second attempt", async (
   const result = await fetchPublishedMenuSnapshot(
     "https://example.test/menu",
     {
+      waitForRetry: async () => {},
       fetchImpl: async () => {
         attempts += 1;
         if (attempts === 1) {
@@ -215,6 +222,7 @@ test("does not retry non-transient response validation errors", async () => {
   let attempts = 0;
   await assert.rejects(
     () => fetchPublishedMenuSnapshot("https://example.test/menu", {
+      waitForRetry: async () => {},
       fetchImpl: async () => {
         attempts += 1;
         return new Response("{}", {
@@ -233,6 +241,7 @@ test("fails on HTTP errors, non-JSON responses, oversized bodies, and timeouts",
   let transientHttpAttempts = 0;
   await assert.rejects(
     () => fetchPublishedMenuSnapshot("https://example.test/menu", {
+      waitForRetry: async () => {},
       fetchImpl: async () => {
         transientHttpAttempts += 1;
         return new Response("unavailable", { status: 503 });
@@ -240,7 +249,7 @@ test("fails on HTTP errors, non-JSON responses, oversized bodies, and timeouts",
     }),
     /HTTP 503/,
   );
-  assert.equal(transientHttpAttempts, 2);
+  assert.equal(transientHttpAttempts, 3);
 
   await assert.rejects(
     () => fetchPublishedMenuSnapshot("https://example.test/menu", {
@@ -269,6 +278,7 @@ test("fails on HTTP errors, non-JSON responses, oversized bodies, and timeouts",
   await assert.rejects(
     () => fetchPublishedMenuSnapshot("https://example.test/menu", {
       timeoutMs: 5,
+      waitForRetry: async () => {},
       fetchImpl: async (_url, init) => new Promise((_resolve, reject) => {
         init.signal.addEventListener("abort", () => {
           reject(new DOMException("Aborted", "AbortError"));
