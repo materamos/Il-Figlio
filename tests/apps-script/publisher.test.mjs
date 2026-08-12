@@ -91,6 +91,7 @@ test("the operator menu exposes only publishing and format recovery", () => {
   };
   const previousSpreadsheetApp = context.SpreadsheetApp;
   context.SpreadsheetApp = {
+    getActiveSpreadsheet: () => null,
     getUi: () => ({
       createMenu: (label) => {
         entries.push(["menu", label]);
@@ -126,6 +127,7 @@ test("publication instructions keep only the two essential steps", () => {
     context.verifyPublishedRevision.toString(),
     /ensureV2PublicationLayoutCurrent_\(\)/,
   );
+  assert.match(context.onOpen.toString(), /ensureV2PublicationLayoutCurrent_\(spreadsheet\)/);
 });
 
 test("product names are normalized in the Sheet before publication", () => {

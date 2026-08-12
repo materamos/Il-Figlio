@@ -620,14 +620,14 @@ function setupV2PublicationSheet_(sheet) {
   );
 }
 
-function ensureV2PublicationLayoutCurrent_() {
+function ensureV2PublicationLayoutCurrent_(activeSpreadsheet) {
   var properties = PropertiesService.getScriptProperties();
   if (
     properties.getProperty(SCRIPT_PROPERTY_KEYS.publicationLayoutVersion)
       === String(APP_CONFIG.publicationLayoutVersion)
   ) return false;
 
-  var spreadsheet = getProjectSpreadsheet_();
+  var spreadsheet = activeSpreadsheet || getProjectSpreadsheet_();
   if (detectSheetSchema_(spreadsheet) !== "v2") return false;
   setupV2PublicationSheet_(
     requiredSheet_(spreadsheet, APP_CONFIG.editorTabs.publication),
