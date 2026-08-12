@@ -22,7 +22,7 @@ import type {
 } from "../types/menu.ts";
 
 const SNAPSHOT_SCHEMA_VERSION = 1;
-const DEFAULT_TIMEOUT_MS = 10_000;
+const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_BYTES = 512 * 1024;
 const FIXTURE_PUBLISHED_AT = "2026-08-01T00:00:00.000Z";
 const SHA_256_HEX = /^[0-9a-f]{64}$/;

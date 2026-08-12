@@ -32,10 +32,12 @@ function publishChanges() {
 
     if (pendingRevision !== null) {
       var pendingHash = properties.getProperty(SCRIPT_PROPERTY_KEYS.pendingHash);
-      var availableSnapshot = readSnapshotContents_();
+      var availableSnapshot = readSnapshotContents_() || readLegacySnapshotContents_();
       if (!snapshotMatches_(availableSnapshot, pendingRevision, pendingHash)) {
         var recovery = recoverPendingSnapshot_(properties, pendingRevision, pendingHash);
         if (!recovery.ok) return recovery;
+      } else if (!readSnapshotContents_()) {
+        writeSnapshotChunks_(properties, availableSnapshot);
       }
       setDashboardState_(
         "Reintentando revisión " + pendingRevision,
@@ -250,6 +252,12 @@ function writeSnapshotFile_(contents) {
 }
 
 function recoverPendingSnapshot_(properties, revision, expectedHash) {
+  var backupContents = readSnapshotBackup_(properties);
+  if (snapshotMatches_(backupContents, revision, expectedHash)) {
+    writeSnapshotChunks_(properties, backupContents);
+    return { ok: true, revision: revision, source: "drive" };
+  }
+
   var validation = readAndValidateDraft_();
   highlightValidationIssues_(validation.issues);
   if (!validation.ok) {
@@ -279,35 +287,92 @@ function recoverPendingSnapshot_(properties, revision, expectedHash) {
 
 function snapshotMatches_(contents, revision, sourceHash) {
   var snapshot = contents ? parseJsonOrNull_(contents) : null;
-  return Boolean(
+  if (!(
     snapshot
       && snapshot.schema_version === 1
       && snapshot.revision === revision
-      && snapshot.source_hash === sourceHash,
-  );
+      && snapshot.currency === "ARS"
+      && typeof snapshot.published_at === "string"
+      && !Number.isNaN(Date.parse(snapshot.published_at))
+      && snapshot.source_hash === sourceHash
+  )) return false;
+
+  try {
+    var canonical = buildCanonicalPayload_({
+      business: snapshot.business,
+      categories: snapshot.categories,
+    }, snapshot.revision);
+    return sha256Hex_(JSON.stringify(canonical)) === sourceHash;
+  } catch (_error) {
+    return false;
+  }
 }
 
 function writeSnapshotChunks_(properties, contents) {
   var chunks = encodeSnapshotChunks_(contents);
-  var previousCount = parseStoredNonNegativeInteger_(
-    properties.getProperty(SCRIPT_PROPERTY_KEYS.snapshotChunkCount),
-  );
+  var activeSlot = properties.getProperty(SCRIPT_PROPERTY_KEYS.snapshotActiveSlot);
+  var targetSlot = activeSlot === "A" ? "B" : "A";
+  var prefix = snapshotSlotPrefix_(targetSlot);
+  var previousMeta = parseSnapshotMeta_(properties.getProperty(prefix + "META"));
   var values = {};
-  values[SCRIPT_PROPERTY_KEYS.snapshotChunkCount] = String(chunks.length);
+  values[prefix + "META"] = JSON.stringify({
+    v: 1,
+    count: chunks.length,
+    encodedLength: chunks.join("").length,
+    contentHash: sha256Hex_(contents),
+  });
   chunks.forEach(function (chunk, index) {
-    values[SNAPSHOT_CHUNK_KEY_PREFIX + index] = chunk;
+    values[prefix + "CHUNK_" + index] = chunk;
   });
   properties.setProperties(values);
 
-  for (var index = chunks.length; index < previousCount; index += 1) {
-    properties.deleteProperty(SNAPSHOT_CHUNK_KEY_PREFIX + index);
+  if (readSnapshotSlot_(properties, targetSlot) !== contents) {
+    throw new Error("No se pudo verificar la copia privada del snapshot.");
   }
+
+  var previousCount = previousMeta ? previousMeta.count : 0;
+  try {
+    for (var index = chunks.length; index < previousCount; index += 1) {
+      properties.deleteProperty(prefix + "CHUNK_" + index);
+    }
+    if (SNAPSHOT_SLOTS.indexOf(activeSlot) !== -1) {
+      deleteLegacySnapshotChunks_(properties);
+    }
+  } catch (_error) {
+    // Stale chunks are not referenced by the verified metadata.
+  }
+
+  properties.setProperty(SCRIPT_PROPERTY_KEYS.snapshotActiveSlot, targetSlot);
 }
 
 function readSnapshotContents_() {
-  var properties = PropertiesService.getScriptProperties();
+  var values = PropertiesService.getScriptProperties().getProperties();
+  return readSnapshotContentsFromProperties_(values);
+}
+
+function readLegacySnapshotContents_() {
+  var values = PropertiesService.getScriptProperties().getProperties();
+  return readLegacySnapshotContentsFromProperties_(values);
+}
+
+function readServedSnapshotContents_() {
+  var values = PropertiesService.getScriptProperties().getProperties();
+  return readSnapshotContentsFromProperties_(values)
+    || readLegacySnapshotContentsFromProperties_(values);
+}
+
+function readSnapshotContentsFromProperties_(properties) {
+  var activeSlot = getSnapshotProperty_(
+    properties,
+    SCRIPT_PROPERTY_KEYS.snapshotActiveSlot,
+  );
+  if (SNAPSHOT_SLOTS.indexOf(activeSlot) === -1) return null;
+  return readSnapshotSlot_(properties, activeSlot);
+}
+
+function readLegacySnapshotContentsFromProperties_(properties) {
   var count = parseStoredPositiveInteger_(
-    properties.getProperty(SCRIPT_PROPERTY_KEYS.snapshotChunkCount),
+    getSnapshotProperty_(properties, "SNAPSHOT_CHUNK_COUNT"),
   );
   var maxChunks = Math.ceil(
     APP_CONFIG.snapshotMaxEncodedChars / APP_CONFIG.snapshotChunkSize,
@@ -316,11 +381,94 @@ function readSnapshotContents_() {
 
   var chunks = [];
   for (var index = 0; index < count; index += 1) {
-    var chunk = properties.getProperty(SNAPSHOT_CHUNK_KEY_PREFIX + index);
+    var chunk = getSnapshotProperty_(properties, "SNAPSHOT_CHUNK_" + index);
     if (!chunk) return null;
     chunks.push(chunk);
   }
-  return decodeSnapshotChunks_(chunks);
+
+  var contents = decodeSnapshotChunks_(chunks);
+  var snapshot = contents ? parseJsonOrNull_(contents) : null;
+  return snapshot
+    && snapshotMatches_(contents, snapshot.revision, snapshot.source_hash)
+    ? contents
+    : null;
+}
+
+function readSnapshotSlot_(properties, slot) {
+  var prefix = snapshotSlotPrefix_(slot);
+  var meta = parseSnapshotMeta_(getSnapshotProperty_(properties, prefix + "META"));
+  var maxChunks = Math.ceil(
+    APP_CONFIG.snapshotMaxEncodedChars / APP_CONFIG.snapshotChunkSize,
+  );
+  if (
+    !meta
+      || meta.count > maxChunks
+      || meta.encodedLength > APP_CONFIG.snapshotMaxEncodedChars
+  ) return null;
+
+  var chunks = [];
+  for (var index = 0; index < meta.count; index += 1) {
+    var chunk = getSnapshotProperty_(properties, prefix + "CHUNK_" + index);
+    if (!chunk || chunk.length > APP_CONFIG.snapshotChunkSize) return null;
+    chunks.push(chunk);
+  }
+  var encoded = chunks.join("");
+  if (encoded.length !== meta.encodedLength) return null;
+  var contents = decodeSnapshotChunks_(chunks);
+  return contents && sha256Hex_(contents) === meta.contentHash ? contents : null;
+}
+
+function getSnapshotProperty_(properties, key) {
+  if (properties && typeof properties.getProperty === "function") {
+    return properties.getProperty(key);
+  }
+  return properties && Object.prototype.hasOwnProperty.call(properties, key)
+    ? properties[key]
+    : null;
+}
+
+function parseSnapshotMeta_(value) {
+  var meta = value ? parseJsonOrNull_(value) : null;
+  return meta
+    && meta.v === 1
+    && Number.isSafeInteger(meta.count)
+    && meta.count > 0
+    && Number.isSafeInteger(meta.encodedLength)
+    && meta.encodedLength > 0
+    && typeof meta.contentHash === "string"
+    && /^[0-9a-f]{64}$/.test(meta.contentHash)
+    ? meta
+    : null;
+}
+
+function snapshotSlotPrefix_(slot) {
+  if (SNAPSHOT_SLOTS.indexOf(slot) === -1) {
+    throw new Error("Slot de snapshot inválido.");
+  }
+  return "SNAPSHOT_" + slot + "_";
+}
+
+function readSnapshotBackup_(properties) {
+  var fileId = properties.getProperty(SCRIPT_PROPERTY_KEYS.snapshotFileId);
+  if (!fileId) return null;
+  try {
+    return DriveApp.getFileById(fileId).getBlob().getDataAsString("UTF-8") || null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function deleteLegacySnapshotChunks_(properties) {
+  var count = parseStoredPositiveInteger_(properties.getProperty("SNAPSHOT_CHUNK_COUNT"));
+  var maxChunks = Math.ceil(
+    APP_CONFIG.snapshotMaxEncodedChars / APP_CONFIG.snapshotChunkSize,
+  );
+  if (count !== null && count <= maxChunks) {
+    for (var index = 0; index < count; index += 1) {
+      properties.deleteProperty("SNAPSHOT_CHUNK_" + index);
+    }
+  }
+  properties.deleteProperty("SNAPSHOT_CHUNK_COUNT");
 }
 
 function encodeSnapshotChunks_(contents) {

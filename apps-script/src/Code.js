@@ -13,11 +13,9 @@ function onOpen() {
 }
 
 function doGet() {
-  return withScriptLock_(function () {
-    var contents = readSnapshotContents_()
-      || JSON.stringify({ error: "snapshot_not_published" });
+  var contents = readServedSnapshotContents_()
+    || JSON.stringify({ error: "snapshot_not_published" });
 
-    return ContentService.createTextOutput(contents)
-      .setMimeType(ContentService.MimeType.JSON);
-  });
+  return ContentService.createTextOutput(contents)
+    .setMimeType(ContentService.MimeType.JSON);
 }

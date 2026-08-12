@@ -72,6 +72,19 @@ Despliega el proyecto como web app:
 - sin `doPost`.
 
 Guarda la URL `/exec` resultante como `MENU_SNAPSHOT_URL` en Vercel.
+Las actualizaciones posteriores deben reutilizar ese mismo deployment: crea una
+versión inmutable y actualiza su identificador; no crees otra implementación.
+
+```powershell
+npx clasp --user ilfiglio --project apps-script/.clasp.json create-version "Descripción"
+npx clasp --user ilfiglio --project apps-script/.clasp.json update-deployment DEPLOYMENT_ID --versionNumber VERSION
+curl.exe --location --fail-with-body --silent --show-error "https://script.google.com/macros/s/DEPLOYMENT_ID/exec?check=UNIX_MS"
+```
+
+La última llamada se ejecuta sin cookies ni sesión: debe devolver JSON no vacío,
+sin pedir login. `clasp` no garantiza por sí solo el acceso anónimo del web app.
+Si devuelve login o `403`, corrige una vez el deployment en la interfaz: ejecutar
+como propietario y acceso `Cualquiera`.
 
 ## 6. Vercel
 
@@ -110,6 +123,8 @@ npm run apps-script:push
 ```
 
 `clasp push` sustituye el contenido remoto completo. Revisa siempre `apps-script:status` y no uses `--force` salvo que el estado remoto haya sido inspeccionado.
+Después del push, crea una versión, actualiza el deployment existente y repite la
+prueba anónima de la sección 5 antes de solicitar un build de Vercel.
 
 ## 9. Recuperación simple
 

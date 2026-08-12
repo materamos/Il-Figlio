@@ -49,6 +49,8 @@ app serves only the last validated JSON snapshot.
   backup; the served copy is stored in size-bounded, base64 chunks in private
   Script Properties to avoid Drive read-after-write inconsistencies. The
   endpoint exposes only menu data destined for the public site.
+- Public reads do not wait for the publication lock: the active-slot pointer is
+  switched only after the inactive slot is completely written and verified.
 
 The wire schema is versioned as `schema_version: 1`. Its `source_hash` is the
 SHA-256 of the UTF-8 `JSON.stringify` output for the canonical object containing
@@ -62,8 +64,9 @@ new public URL:
 
 ```powershell
 npx clasp push --user ilfiglio
+npx clasp create-version "Update Sheets publisher" --user ilfiglio
 npx clasp list-deployments --user ilfiglio
-npx clasp update-deployment "<DEPLOYMENT_ID>" --description "Update Sheets publisher" --user ilfiglio
+npx clasp update-deployment "<DEPLOYMENT_ID>" --versionNumber <VERSION> --description "Update Sheets publisher" --user ilfiglio
 ```
 
 Do not run `create-deployment` again after activation: it creates another URL.

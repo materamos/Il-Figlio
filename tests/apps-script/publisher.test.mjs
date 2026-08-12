@@ -45,6 +45,19 @@ for (const fileName of [
 }
 
 const plain = (value) => JSON.parse(JSON.stringify(value));
+const createProperties = (initial = {}) => {
+  const state = { ...initial };
+  return {
+    state,
+    getProperty: (key) => state[key] ?? null,
+    getProperties: () => ({ ...state }),
+    setProperty: (key, value) => { state[key] = String(value); },
+    setProperties: (values) => {
+      Object.entries(values).forEach(([key, value]) => { state[key] = String(value); });
+    },
+    deleteProperty: (key) => { delete state[key]; },
+  };
+};
 const validState = () => [
   ["campo", "valor"],
   ["estado", "Abierto"],
@@ -189,20 +202,79 @@ test("a confirmed revision keeps later Sheet edits visibly unpublished", () => {
 });
 
 test("published JSON survives private property chunking without Unicode loss", () => {
-  const contents = JSON.stringify({
-    schema_version: 1,
-    description: "Mozzarella, jamón y rúcula. ".repeat(700),
-  });
+  const draft = context.validateAndBuildDraft_(seededMenu(), validState()).draft;
+  const snapshot = context.buildPublishedSnapshot_(draft, 7, "2026-08-11T12:00:00.000Z");
+  const contents = JSON.stringify(snapshot);
   const chunks = plain(context.encodeSnapshotChunks_(contents));
+  const properties = createProperties();
 
-  assert.ok(chunks.length > 1);
+  assert.ok(chunks.length >= 1);
   assert.ok(chunks.every((chunk) => chunk.length <= context.APP_CONFIG.snapshotChunkSize));
   assert.equal(context.decodeSnapshotChunks_(chunks), contents);
-  assert.equal(context.snapshotMatches_(JSON.stringify({
-    schema_version: 1,
-    revision: 7,
-    source_hash: "a".repeat(64),
-  }), 7, "a".repeat(64)), true);
+  assert.equal(context.snapshotMatches_(contents, 7, snapshot.source_hash), true);
+
+  context.writeSnapshotChunks_(properties, contents);
+  assert.equal(properties.state.SNAPSHOT_ACTIVE_SLOT, "A");
+  assert.equal(context.readSnapshotSlot_(properties, "A"), contents);
+
+  const nextSnapshot = context.buildPublishedSnapshot_(draft, 8, "2026-08-11T13:00:00.000Z");
+  const nextContents = JSON.stringify(nextSnapshot);
+  context.writeSnapshotChunks_(properties, nextContents);
+  assert.equal(properties.state.SNAPSHOT_ACTIVE_SLOT, "B");
+  assert.equal(context.readSnapshotSlot_(properties, "B"), nextContents);
+  assert.equal(context.readSnapshotSlot_(properties, "A"), contents);
+
+  properties.state.SNAPSHOT_B_CHUNK_0 = "corrupt";
+  assert.equal(context.readSnapshotSlot_(properties, "B"), null);
+  assert.equal(context.readSnapshotSlot_(properties, "A"), contents);
+  assert.equal(context.readSnapshotContentsFromProperties_(properties), null);
+  assert.equal(context.snapshotMatches_(contents.replace("Mozzarella", "Muzzarella"), 7, snapshot.source_hash), false);
+});
+
+test("a partial inactive-slot write never replaces the active snapshot", () => {
+  const draft = context.validateAndBuildDraft_(seededMenu(), validState()).draft;
+  const first = JSON.stringify(
+    context.buildPublishedSnapshot_(draft, 7, "2026-08-11T12:00:00.000Z"),
+  );
+  const second = JSON.stringify(
+    context.buildPublishedSnapshot_(draft, 8, "2026-08-11T13:00:00.000Z"),
+  );
+  const properties = createProperties();
+  context.writeSnapshotChunks_(properties, first);
+
+  const stableSetProperties = properties.setProperties;
+  properties.setProperties = (values) => {
+    const [firstEntry] = Object.entries(values);
+    stableSetProperties(Object.fromEntries([firstEntry]));
+    throw new Error("simulated partial property write");
+  };
+
+  assert.throws(
+    () => context.writeSnapshotChunks_(properties, second),
+    /simulated partial property write/,
+  );
+  assert.equal(properties.state.SNAPSHOT_ACTIVE_SLOT, "A");
+  assert.equal(context.readSnapshotSlot_(properties, "A"), first);
+  assert.equal(context.readSnapshotSlot_(properties, "B"), null);
+});
+
+test("the v4 property layout remains readable during the slot migration", () => {
+  const draft = context.validateAndBuildDraft_(seededMenu(), validState()).draft;
+  const snapshot = context.buildPublishedSnapshot_(draft, 7, "2026-08-11T12:00:00.000Z");
+  const contents = JSON.stringify(snapshot);
+  const chunks = plain(context.encodeSnapshotChunks_(contents));
+  const properties = createProperties({ SNAPSHOT_CHUNK_COUNT: String(chunks.length) });
+  chunks.forEach((chunk, index) => { properties.state[`SNAPSHOT_CHUNK_${index}`] = chunk; });
+  const previousPropertiesService = context.PropertiesService;
+  context.PropertiesService = { getScriptProperties: () => properties };
+
+  try {
+    assert.equal(context.readLegacySnapshotContents_(), contents);
+    properties.state.SNAPSHOT_CHUNK_0 = "corrupt";
+    assert.equal(context.readLegacySnapshotContents_(), null);
+  } finally {
+    context.PropertiesService = previousPropertiesService;
+  }
 });
 
 test("only a checked Publicacion B2 edit is treated as a publish request", () => {

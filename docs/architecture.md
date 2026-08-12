@@ -62,7 +62,9 @@ Apps Script calcula el hash al publicar y Astro lo vuelve a calcular antes del b
 - Mientras una revisión está pendiente no se acepta otra publicación.
 - El snapshot se sustituye solo después de validar la planilla completa.
 - Apps Script conserva una copia privada en Drive y sirve una copia fragmentada
-  desde Script Properties, bajo el mismo lock de publicación.
+  desde Script Properties.
+- La copia usa dos slots: se escribe y verifica el inactivo antes de cambiar el
+  puntero público. `doGet` no espera el lock y nunca observa una escritura parcial.
 - Astro memoiza una sola lectura durante el build, por lo que `/`, `/carta/` y `/publication.json` usan la misma revisión.
 - Un snapshot inválido, demasiado grande, lento o con hash incorrecto aborta el build.
 - Un build fallido no reemplaza el deployment productivo anterior.
