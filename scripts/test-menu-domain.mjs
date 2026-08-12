@@ -5,6 +5,7 @@ import {
   MENU_CATEGORY_IDS,
   assertValidInitialMenuFixture,
   isStableMenuItemId,
+  validateBusinessStatus,
   validateInitialMenuFixture,
   validateMenuContent,
 } from "../src/domain/index.ts";
@@ -58,6 +59,10 @@ test("confirmed contact and ordering facts remain stable", () => {
   assert.equal(ilFiglioBusiness.hours.display, "Viernes a domingo desde las 19:00");
   assert.match(ilFiglioBusiness.rules.halfAndHalf, /más cara/);
   assert.equal("status" in ilFiglioBusiness, false);
+  assert.deepEqual(initialMenuFixture.businessStatus, {
+    status: "closed",
+    message: "",
+  });
 });
 
 test("source prices and category-specific pricing shapes are preserved", () => {
@@ -108,15 +113,17 @@ test("the validator rejects malformed identifiers and pricing", () => {
   );
 });
 
-test("availability covers every product exactly once", () => {
-  assert.equal(initialMenuFixture.availability.length, initialMenuItems.length);
-  assert.equal(
-    new Set(initialMenuFixture.availability.map((entry) => entry.itemId)).size,
-    initialMenuItems.length,
-  );
-  assert.ok(
-    initialMenuFixture.availability.every(
-      (entry) => typeof entry.available === "boolean",
-    ),
-  );
+test("business status is static, explicit, and limited to the published contract", () => {
+  assert.deepEqual(validateBusinessStatus({ status: "open", message: "Tomamos pedidos." }), []);
+  assert.deepEqual(validateBusinessStatus({ status: "closed", message: "" }), []);
+  assert.deepEqual(validateBusinessStatus({ status: "sold_out", message: "Sin stock." }), []);
+
+  const invalidStatus = validateBusinessStatus({ status: "paused", message: "" });
+  assert.ok(invalidStatus.some((issue) => issue.path === "businessStatus.status"));
+
+  const invalidMessage = validateBusinessStatus({
+    status: "closed",
+    message: ` ${"x".repeat(160)}`,
+  });
+  assert.ok(invalidMessage.some((issue) => issue.path === "businessStatus.message"));
 });

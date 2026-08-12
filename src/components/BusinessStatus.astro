@@ -1,0 +1,41 @@
+---
+import type { BusinessStatusSnapshot } from "../types/menu";
+
+interface Props {
+  status: BusinessStatusSnapshot;
+  openingHours: string;
+}
+
+const { status, openingHours } = Astro.props;
+const presentation = {
+  open: {
+    label: "Estamos tomando pedidos",
+    detail: "Consultá tiempos y modalidad de entrega por WhatsApp.",
+    tone: "open",
+  },
+  closed: {
+    label: "Ahora estamos cerrados",
+    detail: `${openingHours}. Consultanos por WhatsApp.`,
+    tone: "closed",
+  },
+  sold_out: {
+    label: "Producción agotada por hoy",
+    detail: "Podés escribirnos para consultar el próximo día de apertura.",
+    tone: "sold-out",
+  },
+} as const;
+const current = presentation[status.status];
+---
+
+<div
+  class="business-status"
+  data-business-status={status.status}
+  data-tone={current.tone}
+  aria-label="Estado actual de Il Figlio"
+>
+  <p class="business-status__label">
+    <span class="business-status__dot" aria-hidden="true"></span>
+    <span>{current.label}</span>
+  </p>
+  <p class="business-status__detail">{status.message || current.detail}</p>
+</div>

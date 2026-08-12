@@ -11,7 +11,7 @@ export {
   assertValidMenuContent,
   isKebabCaseId,
   isStableMenuItemId,
+  validateBusinessStatus,
   validateInitialMenuFixture,
-  validateMenuAvailability,
   validateMenuContent,
 } from "./menu-validation.ts";

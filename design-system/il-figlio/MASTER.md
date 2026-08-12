@@ -25,7 +25,7 @@ The supplied logo contains exact `#FF0000` red on white. Pure red does not reach
 | Border | `#E7E1DE` | `--color-border` | Dividers and input borders |
 | Disabled | `#A39D99` | `--color-disabled` | Disabled text only |
 
-Never communicate availability only with red. Always pair color with explicit text and an icon or shape.
+Never communicate business status only with red. Always pair color with explicit text and a shape.
 
 ## Typography
 
@@ -83,7 +83,7 @@ Use a 4px base with an 8px dominant rhythm.
 - Primary transitions: 180ms ease-out; only opacity, color, and transform.
 - Respect `prefers-reduced-motion`.
 - Do not hide essential content pending animation or JavaScript.
-- One primary CTA per view: WhatsApp publicly, Save/Publish contextually in admin.
+- One primary public CTA per view: WhatsApp.
 
 ## Public page pattern
 
@@ -102,7 +102,7 @@ Use a 4px base with an 8px dominant rhythm.
 - Skip link and meaningful landmarks.
 - Visible labels, not placeholder-only fields.
 - Status changes announced with `aria-live`.
-- Availability conveyed with text, shape, and color.
+- Business status conveyed with text, shape, and color.
 - Zoom remains enabled.
 - Focus order follows reading order.
 
@@ -110,6 +110,6 @@ Use a 4px base with an 8px dominant rhythm.
 
 - Locally hosted fonts with `font-display: swap`.
 - Responsive logo assets with explicit dimensions.
-- Astro components for static structure; plain JavaScript only for runtime state.
+- Astro components for static structure; plain JavaScript only for local navigation behavior.
 - No framework hydration or animation dependency.
-- Runtime data reserves layout space and has explicit fallback states.
+- Business status is incorporated at build time and reserves stable layout space.

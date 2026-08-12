@@ -13,12 +13,12 @@ const isProduction = productionSignals.length > 0;
 
 if (!dataSource) {
   fail(
-    "MENU_DATA_SOURCE is required. Use fixture explicitly for local/CI builds or supabase for real data.",
+    "MENU_DATA_SOURCE is required. Use fixture explicitly for local/CI builds or google_snapshot for published data.",
   );
 }
 
-if (!new Set(["fixture", "supabase"]).has(dataSource)) {
-  fail('MENU_DATA_SOURCE must be either "fixture" or "supabase".');
+if (!new Set(["fixture", "google_snapshot"]).has(dataSource)) {
+  fail('MENU_DATA_SOURCE must be either "fixture" or "google_snapshot".');
 }
 
 if (dataSource === "fixture") {
@@ -37,24 +37,12 @@ if (dataSource === "fixture") {
   process.exit(0);
 }
 
-const requiredSupabaseEnvNames = [
-  "PUBLIC_SUPABASE_URL",
-  "PUBLIC_SUPABASE_ANON_KEY",
-  "SUPABASE_DB_URL",
-];
-const missingEnvNames = requiredSupabaseEnvNames.filter(
-  (name) => !process.env[name]?.trim(),
-);
-
-if (missingEnvNames.length > 0) {
-  fail(`Supabase build credentials are missing: ${missingEnvNames.join(", ")}.`);
+if (!process.env.MENU_SNAPSHOT_URL?.trim()) {
+  fail("MENU_SNAPSHOT_URL is required when MENU_DATA_SOURCE=google_snapshot.");
 }
 
-validateUrl("PUBLIC_SUPABASE_URL", process.env.PUBLIC_SUPABASE_URL, {
+validateUrl("MENU_SNAPSHOT_URL", process.env.MENU_SNAPSHOT_URL, {
   protocols: isProduction ? ["https:"] : ["http:", "https:"],
-});
-validateUrl("SUPABASE_DB_URL", process.env.SUPABASE_DB_URL, {
-  protocols: ["postgres:", "postgresql:"],
 });
 
 if (isProduction) {
@@ -68,7 +56,7 @@ if (isProduction) {
 }
 
 console.log(
-  `Build environment valid: Supabase source${isProduction ? " for production" : ""}.`,
+  `Build environment valid: Google snapshot source${isProduction ? " for production" : ""}.`,
 );
 
 function validateUrl(name, rawValue, { protocols }) {

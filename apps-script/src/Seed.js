@@ -1,0 +1,28 @@
+/* eslint-disable no-unused-vars -- Apps Script combines project files in one global scope. */
+
+var INITIAL_MENU_ROWS = Object.freeze([
+  ["clasica-mozzarella", "Clásicas", 1, "Mozzarella", "Salsa de tomate, mozzarella, orégano o albahaca y aceitunas.", 14000, 2500, "", "", "Sí"],
+  ["clasica-fugazza", "Clásicas", 2, "Fugazza", "Cebolla, queso parmesano, orégano, aceite de oliva y aceitunas.", 11000, 1500, "", "", "Sí"],
+  ["clasica-fugazza-con-mozzarella", "Clásicas", 3, "Fugazza con mozzarella", "Mozzarella, cebolla, queso parmesano, orégano, aceite de oliva y aceitunas.", 15000, 3000, "", "", "Sí"],
+  ["clasica-jamon", "Clásicas", 4, "Jamón", "Salsa de tomate, mozzarella, jamón cocido, orégano y aceitunas.", 17000, 3500, "", "", "Sí"],
+  ["clasica-jamon-y-morrones", "Clásicas", 5, "Jamón y morrones", "Salsa de tomate, mozzarella, jamón cocido, morrones, orégano y aceitunas.", 19000, 4000, "", "", "Sí"],
+  ["clasica-napolitana", "Clásicas", 6, "Napolitana", "Salsa de tomate, mozzarella, rodajas de tomate, queso parmesano, provenzal y aceitunas.", 17000, 3500, "", "", "Sí"],
+  ["clasica-napolitana-especial", "Clásicas", 7, "Napolitana especial", "Salsa de tomate, mozzarella, jamón cocido, rodajas de tomate, queso parmesano, provenzal y aceitunas.", 19000, 4000, "", "", "Sí"],
+  ["clasica-provolone", "Clásicas", 8, "Provolone", "Salsa de tomate, mozzarella, queso provolone, orégano y aceitunas.", 20000, 4000, "", "", "Sí"],
+  ["clasica-provolone-con-jamon", "Clásicas", 9, "Provolone con jamón", "Salsa de tomate, mozzarella, jamón cocido, queso provolone, orégano y aceitunas.", 22000, 4500, "", "", "Sí"],
+  ["clasica-roquefort", "Clásicas", 10, "Roquefort", "Salsa de tomate, mozzarella, queso roquefort y aceitunas.", 20000, 3500, "", "", "Sí"],
+  ["clasica-peperoni", "Clásicas", 11, "Peperoni", "Salsa de tomate, mozzarella, queso parmesano y peperoni.", 20000, 4000, "", "", "Sí"],
+  ["clasica-aglio-e-olio", "Clásicas", 12, "Aglio e olio", "Salsa de tomate, ajo picado, aceite de oliva, orégano y aceitunas.", 9000, 1500, "", "", "Sí"],
+  ["rellena-fugazzeta", "Rellenas", 1, "Fugazzeta", "Mozzarella, cebolla, queso parmesano, orégano, aceite de oliva y aceitunas.", 24000, "", "", "", "Sí"],
+  ["rellena-fugazzetta-con-jamon", "Rellenas", 2, "Fugazzetta con jamón", "Mozzarella, jamón cocido, cebolla, queso parmesano, orégano, aceite de oliva y aceitunas.", 27000, "", "", "", "Sí"],
+  ["rellena-fugazzetta-provolone", "Rellenas", 3, "Fugazzetta provolone", "Mozzarella, queso provolone, cebolla, orégano, aceite de oliva y aceitunas.", 27000, "", "", "", "Sí"],
+  ["rellena-fugazzetta-completa", "Rellenas", 4, "Fugazzetta completa", "Mozzarella, jamón cocido, morrones, cebolla, queso parmesano, orégano, aceite de oliva y aceitunas.", 30000, "", "", "", "Sí"],
+  ["gourmet-jamon-crudo", "Gourmet", 1, "Jamón crudo", "Salsa de tomate, mozzarella, jamón crudo, orégano y aceitunas.", 21000, "", "", "", "Sí"],
+  ["gourmet-cuatro-quesos", "Gourmet", 2, "Cuatro quesos", "Salsa de tomate, mozzarella, provolone, roquefort, parmesano, orégano y aceitunas.", 24000, "", "", "", "Sí"],
+  ["gourmet-panceta-y-champignons", "Gourmet", 3, "Panceta y champignons", "Salsa de tomate, mozzarella, champignons, bacon (panceta) y aceitunas.", 28000, "", "", "", "Sí"],
+  ["gourmet-cbo", "Gourmet", 4, "C.B.O", "Cheddar, bacon (panceta), base de cebolla o tomate y aceitunas.", 28000, "", "", "", "Sí"],
+  ["empanada-carne", "Empanadas", 1, "Carne", "", "", "", 2800, "", "Sí"],
+  ["empanada-jamon-y-queso", "Empanadas", 2, "Jamón y queso", "", "", "", 2800, "", "Sí"],
+  ["faina", "Extras", 1, "Fainá", "", "", "", "", 1200, "Sí"],
+  ["faina-provolone", "Extras", 2, "Fainá provolone", "", "", "", "", 2000, "Sí"],
+]);

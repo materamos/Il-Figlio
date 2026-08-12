@@ -1,6 +1,5 @@
 export {
   ilFiglioBusiness,
-  initialMenuAvailability,
   initialMenuContent,
   initialMenuFixture,
   initialMenuItems,

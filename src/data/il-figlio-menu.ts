@@ -259,15 +259,6 @@ export const initialMenuItems = [
   },
 ] as const satisfies readonly MenuItem[];
 
-/**
- * Safe development seed only. These booleans are not a claim about the live
- * weekend stock; the admin/runtime layer owns operational truth after setup.
- */
-export const initialMenuAvailability = initialMenuItems.map((item) => ({
-  itemId: item.id,
-  available: true,
-}));
-
 const fixtureDraft = {
   business: ilFiglioBusiness,
   content: {
@@ -276,7 +267,10 @@ const fixtureDraft = {
     categories: fixedMenuCategories,
     items: initialMenuItems,
   },
-  availability: initialMenuAvailability,
+  businessStatus: {
+    status: "closed",
+    message: "",
+  },
 } satisfies InitialMenuFixture;
 
 export const initialMenuFixture = assertValidInitialMenuFixture(fixtureDraft);

@@ -42,9 +42,19 @@ export interface MenuContentSnapshot {
   items: readonly MenuItem[];
 }
 
-export interface MenuItemAvailability {
-  itemId: string;
-  available: boolean;
+export type BusinessStatus = "open" | "closed" | "sold_out";
+
+export interface BusinessStatusSnapshot {
+  status: BusinessStatus;
+  message: string;
+}
+
+export interface PublishedMenuSnapshot {
+  schemaVersion: 1;
+  content: MenuContentSnapshot;
+  businessStatus: BusinessStatusSnapshot;
+  publishedAt: string;
+  sourceHash: string;
 }
 
 export interface BusinessAddress {
@@ -69,10 +79,7 @@ export interface BusinessHours {
   display: string;
 }
 
-/**
- * Only confirmed, stable business facts belong here. Runtime status deliberately
- * lives outside this contract because it changes during service.
- */
+/** Only confirmed, stable business facts belong here. */
 export interface BusinessProfile {
   name: string;
   description: string;
@@ -85,7 +92,7 @@ export interface BusinessProfile {
 export interface InitialMenuFixture {
   business: BusinessProfile;
   content: MenuContentSnapshot;
-  availability: readonly MenuItemAvailability[];
+  businessStatus: BusinessStatusSnapshot;
 }
 
 export interface MenuValidationIssue {

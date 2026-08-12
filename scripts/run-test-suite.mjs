@@ -3,7 +3,7 @@ import { readdir } from "node:fs/promises";
 import path from "node:path";
 
 const rootDir = process.cwd();
-const supportedSuites = new Set(["admin", "menu", "tools"]);
+const supportedSuites = new Set(["apps-script", "menu", "tools"]);
 const suite = process.argv[2];
 
 if (!supportedSuites.has(suite)) {

@@ -10,8 +10,6 @@ export default tseslint.config(
       "coverage/",
       "dist/",
       "node_modules/",
-      "supabase/.branches/",
-      "supabase/.temp/",
     ],
   },
   {
@@ -36,13 +34,27 @@ export default tseslint.config(
     },
   },
   {
-    files: ["supabase/functions/**/*.ts"],
-    extends: [js.configs.recommended, tseslint.configs.recommended],
+    files: ["apps-script/**/*.js"],
+    extends: [js.configs.recommended],
     languageOptions: {
       globals: {
-        ...globals.browser,
-        ...globals.deno,
+        ContentService: "readonly",
+        DriveApp: "readonly",
+        LockService: "readonly",
+        PropertiesService: "readonly",
+        ScriptApp: "readonly",
+        SpreadsheetApp: "readonly",
+        UrlFetchApp: "readonly",
+        Utilities: "readonly",
       },
+    },
+    rules: {
+      "no-unused-vars": [
+        "error",
+        {
+          varsIgnorePattern: "^(doGet|handlePublishEdit|onOpen|setupProject|verifyPublishedRevision)$",
+        },
+      ],
     },
   },
 );

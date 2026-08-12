@@ -1,12 +1,16 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import BrandMark from "../components/BrandMark.astro";
+import BusinessStatus from "../components/BusinessStatus.astro";
 import InstagramIcon from "../components/InstagramIcon.astro";
 import LocationIcon from "../components/LocationIcon.astro";
 import PhoneIcon from "../components/PhoneIcon.astro";
 import WhatsAppIcon from "../components/WhatsAppIcon.astro";
 import { ilFiglioBusiness } from "../data";
+import { loadPublishedMenu } from "../utils/menuContent";
 
+const publishedMenu = await loadPublishedMenu();
+const isAcceptingOrders = publishedMenu.businessStatus.status === "open";
 const whatsappHref = `https://wa.me/${ilFiglioBusiness.contact.whatsappE164}?text=${encodeURIComponent(
   ilFiglioBusiness.contact.whatsappDefaultMessage,
 )}`;
@@ -15,8 +19,6 @@ const instagramHref = `https://www.instagram.com/${ilFiglioBusiness.contact.inst
 const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
   ilFiglioBusiness.address.display,
 )}`;
-const publicSupabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 ---
 
 <BaseLayout
@@ -24,14 +26,7 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
   description={`${ilFiglioBusiness.description} ${ilFiglioBusiness.hours.display} en Lanús Oeste.`}
   bodyClass="landing-body"
 >
-  <main
-    class="landing-page"
-    id="main-content"
-    data-menu-page
-    data-supabase-url={publicSupabaseUrl}
-    data-supabase-anon-key={publicSupabaseAnonKey}
-    data-opening-hours={ilFiglioBusiness.hours.display}
-  >
+  <main class="landing-page" id="main-content">
     <header class="site-header" aria-label="Encabezado principal">
       <a class="site-header__brand" href="/" aria-label="Il Figlio, inicio">
         <BrandMark class="site-header__mark" decorative={true} size={1080} />
@@ -51,20 +46,10 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
         </p>
       </div>
 
-      <div
-        class="runtime-status"
-        data-business-status
-        data-tone="neutral"
-        aria-live="polite"
-      >
-        <p class="runtime-status__label">
-          <span class="runtime-status__dot" aria-hidden="true"></span>
-          <span data-business-status-label>Consultando disponibilidad</span>
-        </p>
-        <p class="runtime-status__detail" data-business-status-detail>
-          Antes de pedir, confirmamos el estado actual de la producción.
-        </p>
-      </div>
+      <BusinessStatus
+        status={publishedMenu.businessStatus}
+        openingHours={ilFiglioBusiness.hours.display}
+      />
 
       <div class="hero__actions">
         <a
@@ -72,12 +57,9 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
           href={whatsappHref}
           target="_blank"
           rel="noopener noreferrer"
-          data-whatsapp-link
-          data-default-label="Pedir por WhatsApp"
-          data-unavailable-label="Consultar por WhatsApp"
         >
           <WhatsAppIcon />
-          <span data-whatsapp-label>Consultar por WhatsApp</span>
+          <span>{isAcceptingOrders ? "Pedir por WhatsApp" : "Consultar por WhatsApp"}</span>
         </a>
         <a class="button button--secondary" href="/carta/">Ver la carta</a>
       </div>
@@ -92,9 +74,9 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
         <ul class="contact-list">
           <li>
-            <a href={whatsappHref} target="_blank" rel="noopener noreferrer" data-whatsapp-link>
+            <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
               <WhatsAppIcon />
-              <span data-whatsapp-label>WhatsApp {ilFiglioBusiness.contact.phoneDisplay}</span>
+              <span>WhatsApp {ilFiglioBusiness.contact.phoneDisplay}</span>
             </a>
           </li>
           <li>
@@ -125,10 +107,5 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
     </footer>
   </main>
 
-  <script is:inline>
-    if (window.location.hash === "#carta") {
-      window.location.replace("/carta/");
-    }
-  </script>
-  <script is:inline type="module" src="/scripts/menu-runtime-state.js"></script>
+  <script is:inline type="module" src="/scripts/legacy-carta-redirect.js"></script>
 </BaseLayout>

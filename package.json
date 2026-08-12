@@ -15,18 +15,16 @@
     "check": "astro check",
     "check:js": "node scripts/check-js-syntax.mjs",
     "lint": "eslint .",
-    "test": "npm run test:menu && npm run test:admin && npm run test:tools",
+    "test": "npm run test:menu && npm run test:apps-script && npm run test:tools",
     "test:menu": "node scripts/run-test-suite.mjs menu",
-    "test:admin": "node scripts/run-test-suite.mjs admin",
+    "test:apps-script": "node scripts/run-test-suite.mjs apps-script",
     "test:tools": "node scripts/run-test-suite.mjs tools",
-    "test:db": "supabase test db",
     "verify:dist-secrets": "node scripts/verify-dist-secrets.mjs",
-    "supabase:audit": "node scripts/audit-supabase-readonly.mjs",
-    "supabase": "supabase",
-    "supabase:start": "supabase start",
-    "supabase:stop": "supabase stop",
-    "supabase:status": "supabase status",
-    "supabase:reset": "supabase db reset"
+    "apps-script:status": "clasp --user ilfiglio --project apps-script/.clasp.json show-file-status",
+    "apps-script:push": "clasp --user ilfiglio --project apps-script/.clasp.json push",
+    "apps-script:open": "clasp --user ilfiglio --project apps-script/.clasp.json open-script",
+    "apps-script:deployments": "clasp --user ilfiglio --project apps-script/.clasp.json list-deployments",
+    "apps-script:update-deployment": "clasp --user ilfiglio --project apps-script/.clasp.json update-deployment"
   },
   "dependencies": {
     "@fontsource-variable/karla": "^5.3.0",
@@ -38,15 +36,24 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@eslint/js": "^10.0.1",
+    "@google/clasp": "^3.3.0",
     "eslint": "^10.8.0",
     "globals": "^17.8.0",
-    "postgres": "^3.4.9",
-    "supabase": "^2.111.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.65.0"
   },
   "volta": {
     "node": "22.23.0",
     "npm": "10.9.8"
+  },
+  "overrides": {
+    "nanoid": "3.3.18",
+    "uuid": "11.1.0",
+    "gaxios": "7.3.0",
+    "googleapis-common": "9.0.2",
+    "googleapis": "174.0.1",
+    "google-auth-library": "10.3.0",
+    "gcp-metadata": "8.1.1",
+    "gtoken": "8.0.0"
   }
 }

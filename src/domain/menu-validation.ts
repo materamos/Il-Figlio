@@ -5,11 +5,11 @@ import {
   fixedMenuCategories,
 } from "./menu-config.ts";
 import type {
+  BusinessStatusSnapshot,
   InitialMenuFixture,
   MenuCategoryId,
   MenuContentSnapshot,
   MenuItem,
-  MenuItemAvailability,
   MenuValidationIssue,
 } from "../types/menu.ts";
 
@@ -48,47 +48,33 @@ export const validateMenuContent = (
   return issues;
 };
 
-export const validateMenuAvailability = (
-  availability: readonly MenuItemAvailability[],
-  items: readonly MenuItem[],
+export const validateBusinessStatus = (
+  businessStatus: BusinessStatusSnapshot,
 ): MenuValidationIssue[] => {
   const issues: MenuValidationIssue[] = [];
-  const itemIds = new Set(items.map((item) => item.id));
-  const seenIds = new Set<string>();
 
-  availability.forEach((entry, index) => {
-    const path = `availability[${index}]`;
+  if (!["open", "closed", "sold_out"].includes(businessStatus.status)) {
+    issues.push({
+      path: "businessStatus.status",
+      message: "must be open, closed, or sold_out",
+    });
+  }
 
-    if (seenIds.has(entry.itemId)) {
-      issues.push({
-        path: `${path}.itemId`,
-        message: `duplicates availability for ${entry.itemId}`,
-      });
-    }
-    seenIds.add(entry.itemId);
-
-    if (!itemIds.has(entry.itemId)) {
-      issues.push({
-        path: `${path}.itemId`,
-        message: `references unknown menu item ${entry.itemId}`,
-      });
-    }
-
-    if (typeof entry.available !== "boolean") {
-      issues.push({
-        path: `${path}.available`,
-        message: "must be a boolean",
-      });
-    }
-  });
-
-  for (const itemId of itemIds) {
-    if (!seenIds.has(itemId)) {
-      issues.push({
-        path: "availability",
-        message: `is missing menu item ${itemId}`,
-      });
-    }
+  if (typeof businessStatus.message !== "string") {
+    issues.push({
+      path: "businessStatus.message",
+      message: "must be a string",
+    });
+  } else if (businessStatus.message !== businessStatus.message.trim()) {
+    issues.push({
+      path: "businessStatus.message",
+      message: "must not have surrounding whitespace",
+    });
+  } else if (businessStatus.message.length > 160) {
+    issues.push({
+      path: "businessStatus.message",
+      message: "must contain at most 160 characters",
+    });
   }
 
   return issues;
@@ -99,7 +85,7 @@ export const validateInitialMenuFixture = (
 ): MenuValidationIssue[] => {
   const issues = [
     ...validateMenuContent(fixture.content),
-    ...validateMenuAvailability(fixture.availability, fixture.content.items),
+    ...validateBusinessStatus(fixture.businessStatus),
   ];
 
   if (!fixture.business.name.trim()) {

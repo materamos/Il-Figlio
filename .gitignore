@@ -9,10 +9,9 @@ coverage/
 .env.*
 !.env.example
 
-# Hosting and local services
+# Hosting and local tools
 .vercel/
-supabase/.branches/
-supabase/.temp/
+.clasprc.json
 
 # Editors and operating systems
 .DS_Store

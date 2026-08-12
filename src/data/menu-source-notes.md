@@ -26,4 +26,4 @@ Fuentes consultadas:
 
 ## Datos deliberadamente ausentes
 
-No se incorporaron zona o costo de entrega, medios de pago ni disponibilidad real. `initialMenuAvailability` habilita todos los productos únicamente como semilla de desarrollo; Supabase y el admin serán la fuente operativa al activar el sistema. El estado abierto/cerrado sigue siendo operativo y se administra en tiempo real.
+No se incorporaron zona o costo de entrega, medios de pago ni disponibilidad por producto. La planilla editorial controla qué productos aparecen y publica un único estado global (`open`, `closed` o `sold_out`) junto con la carta estática.

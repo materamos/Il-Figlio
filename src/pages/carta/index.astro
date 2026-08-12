@@ -2,42 +2,38 @@
 import "../../styles/menu.css";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import BrandMark from "../../components/BrandMark.astro";
+import BusinessStatus from "../../components/BusinessStatus.astro";
 import MenuSection from "../../components/MenuSection.astro";
 import WhatsAppIcon from "../../components/WhatsAppIcon.astro";
 import { ilFiglioBusiness } from "../../data";
-import { loadMenuContent } from "../../utils/menuContent";
+import { loadPublishedMenu } from "../../utils/menuContent";
 
-const content = await loadMenuContent();
-const categories = [...content.categories].sort((a, b) => a.orderIndex - b.orderIndex);
+const publishedMenu = await loadPublishedMenu();
+const content = publishedMenu.content;
+const sortedCategories = [...content.categories].sort((a, b) => a.orderIndex - b.orderIndex);
 const itemsByCategory = new Map(
-  categories.map((category) => [
+  sortedCategories.map((category) => [
     category.id,
     content.items
       .filter((item) => item.categoryId === category.id)
       .sort((a, b) => a.orderIndex - b.orderIndex),
   ]),
 );
+const categories = sortedCategories.filter(
+  (category) => (itemsByCategory.get(category.id)?.length ?? 0) > 0,
+);
 const whatsappHref = `https://wa.me/${ilFiglioBusiness.contact.whatsappE164}?text=${encodeURIComponent(
   ilFiglioBusiness.contact.whatsappDefaultMessage,
 )}`;
 const phoneHref = "tel:+541144097322";
-const publicSupabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 ---
 
 <BaseLayout
   title="Carta | Il Figlio"
-  description={`Carta actualizada de ${ilFiglioBusiness.name}. Confirmá disponibilidad y hacé tu pedido por WhatsApp.`}
+  description={`Carta actualizada de ${ilFiglioBusiness.name}. Consultá el estado y hacé tu pedido por WhatsApp.`}
   bodyClass="menu-body"
 >
-  <main
-    class="menu-page"
-    id="main-content"
-    data-menu-page
-    data-supabase-url={publicSupabaseUrl}
-    data-supabase-anon-key={publicSupabaseAnonKey}
-    data-opening-hours={ilFiglioBusiness.hours.display}
-  >
+  <main class="menu-page" id="main-content">
     <header class="site-header" aria-label="Encabezado principal">
       <a class="site-header__brand" href="/" aria-label="Il Figlio, volver al inicio">
         <BrandMark class="site-header__mark" decorative={true} size={1080} />
@@ -68,9 +64,13 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
         <p class="section-eyebrow">Nuestra carta</p>
         <h2 class="menu-intro__title">Elegí tu favorita</h2>
         <p class="menu-intro__copy">
-          Los productos agotados permanecen visibles para que conozcas toda nuestra propuesta.
-          Confirmá disponibilidad y tiempos por WhatsApp.
+          Esta carta muestra los productos y precios de la última publicación.
+          Consultá tiempos y modalidad de entrega por WhatsApp.
         </p>
+        <BusinessStatus
+          status={publishedMenu.businessStatus}
+          openingHours={ilFiglioBusiness.hours.display}
+        />
       </header>
 
       {categories.map((category, index) => (
@@ -84,7 +84,7 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
       <aside class="menu-rules" aria-labelledby="menu-rules-title">
         <h2 id="menu-rules-title">Para tener en cuenta</h2>
         <p>{ilFiglioBusiness.rules.halfAndHalf}</p>
-        <p>Los precios y la disponibilidad se confirman al momento de hacer el pedido.</p>
+        <p>Consultá tiempos y modalidad de entrega al momento de hacer el pedido.</p>
       </aside>
     </div>
 
@@ -100,6 +100,5 @@ const publicSupabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
     <WhatsAppIcon />
   </a>
 
-  <script is:inline type="module" src="/scripts/menu-runtime-state.js"></script>
   <script is:inline type="module" src="/scripts/menu-index-sticky.js"></script>
 </BaseLayout>

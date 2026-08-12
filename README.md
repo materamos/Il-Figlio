@@ -1,105 +1,101 @@
 # Il Figlio
 
-Landing y carta QR para Il Figlio, con un administrador privado y acotado para mantener sabores, precios y disponibilidad. La portada pública vive en `/` y la carta en `/carta/`. El proyecto conserva el stack probado en El Faraón —Astro, Supabase y Vercel— pero reduce el dominio a una sola carta, un solo usuario y dos flujos claramente separados: edición/publicación y operación inmediata.
+Landing y carta QR estática para Il Figlio. El contenido se edita en una Google Sheet privada, un Apps Script valida y publica un snapshot JSON, y Vercel reconstruye el sitio Astro cuando recibe el Deploy Hook.
 
-## Estado del proyecto
+## Arquitectura
 
-La implementación técnica tiene un entorno remoto activo:
+```text
+Google Sheet privada
+  -> Apps Script valida y genera el snapshot
+  -> web app JSON pública de solo lectura
+  -> Deploy Hook
+  -> build estático de Astro en Vercel
+```
 
-- Sitio público: [https://il-figlio.vercel.app](https://il-figlio.vercel.app).
-- Backend remoto de Supabase con migración, Auth, función de publicación y credencial privada de build activas.
-- Administrador privado disponible para edición y publicación.
+La web no consulta Google durante la navegación. Landing, carta y estado del negocio quedan incorporados al HTML durante el build.
 
-El dominio propio, el QR definitivo y la transferencia al cliente permanecen pendientes. La propiedad, el consentimiento, los respaldos y la operación privada se registran fuera de este repositorio; no se publican aquí identidades ni secretos.
+Rutas públicas:
 
-Documentación principal:
-
-- [Arquitectura](docs/architecture.md)
-- [Activación, operación y transferencia remota](docs/activation.md)
-- [Estado remoto y operación de Supabase](docs/supabase/README.md)
-- [Sistema de diseño](design-system/il-figlio/MASTER.md)
+- `/`: landing y contacto.
+- `/carta/`: carta completa.
+- `/publication.json`: revisión y hash del artefacto servido.
 
 ## Requisitos
 
-- Node.js `22.23.0` (se admite cualquier versión compatible con `22.x`)
-- npm `10` o superior
-- Deno `2.7.14` para validar la Edge Function
-- Un runtime compatible con Docker (Docker Desktop o Colima) para ejecutar Supabase local
+- Node.js `22.23.0` o compatible con `22.x`.
+- npm `10` o superior.
+- Cuenta Google autorizada para operar `clasp` cuando se actualiza Apps Script.
 
-Las versiones recomendadas están declaradas en `package.json` mediante Volta.
+## Desarrollo local
 
-## Inicio rápido
-
-```bash
+```powershell
 npm install
-cp .env.example .env.local
+Copy-Item .env.example .env.local
 npm run dev
 ```
 
-La URL local predeterminada es `http://localhost:4321`. El fixture es solo una fuente de desarrollo: debe elegirse mediante `MENU_DATA_SOURCE=fixture` y `ALLOW_FIXTURE_BUILD=true`.
+El fixture requiere un opt-in explícito:
+
+```powershell
+$env:MENU_DATA_SOURCE = "fixture"
+$env:ALLOW_FIXTURE_BUILD = "true"
+npm run build
+```
 
 ## Comandos
 
 | Comando | Propósito |
 | --- | --- |
 | `npm run dev` | Inicia Astro en desarrollo. |
-| `npm run build` | Valida el entorno, genera `dist/` y rechaza secretos en el artefacto. |
-| `npm run preview` | Sirve localmente el último build. |
-| `npm run check` | Valida Astro y TypeScript estricto. |
-| `npm run check:js` | Comprueba sintaxis de JavaScript del repositorio. |
+| `npm run build` | Valida el entorno, genera `dist/` y comprueba el artefacto. |
+| `npm run check` | Valida Astro y TypeScript. |
+| `npm run check:js` | Comprueba la sintaxis JavaScript. |
 | `npm run lint` | Ejecuta ESLint. |
-| `npm test` | Ejecuta las suites de menú, admin y tooling. |
-| `npm run test:menu` | Ejecuta reglas y contratos del menú. |
-| `npm run test:admin` | Ejecuta reglas y contratos del administrador. |
-| `npm run test:tools` | Ejecuta las guardas del build y del artefacto. |
-| `npm run verify:dist-secrets` | Rechaza secretos o marcadores privados dentro de `dist/`. |
-| `npm run supabase:start` | Inicia Supabase local. |
-| `npm run supabase:reset` | Reconstruye la base local desde migraciones y seed. |
-| `npm run test:db` | Ejecuta las pruebas SQL de Supabase. |
-| `npm run supabase:audit` | Audita la base y la exposición efectiva del Data API en modo read-only. |
+| `npm test` | Ejecuta pruebas del menú, Apps Script y tooling. |
+| `npm run apps-script:status` | Muestra qué archivos enviaría `clasp`. |
+| `npm run apps-script:push` | Actualiza el Apps Script vinculado. |
+| `npm run apps-script:open` | Abre el Apps Script vinculado. |
+| `npm run apps-script:deploy` | Crea una versión desplegada del web app. |
 
-El runner descubre archivos en `tests/<suite>/**/*.test.mjs` y, por compatibilidad con scripts existentes, `scripts/test-<suite>-*.mjs`. Una suite vacía falla de forma intencional: CI nunca informa éxito si faltan sus pruebas.
+## Fuentes de datos
 
-## Builds y fuentes de datos
+### Fixture local y CI
 
-### Fixture local o CI
-
-```bash
-MENU_DATA_SOURCE=fixture ALLOW_FIXTURE_BUILD=true npm run build
+```text
+MENU_DATA_SOURCE=fixture
+ALLOW_FIXTURE_BUILD=true
 ```
 
-CI usa exactamente ese opt-in. Un build productivo detectado por `VERCEL_ENV`, `DEPLOY_ENV`, `APP_ENV` o `NODE_ENV` rechaza el fixture incluso si se intenta habilitarlo.
+Un build productivo nunca puede usar el fixture.
 
-### Supabase
+### Snapshot publicado
 
-```bash
-MENU_DATA_SOURCE=supabase \
-PUBLIC_SUPABASE_URL=https://PROJECT_REF.supabase.co \
-PUBLIC_SUPABASE_ANON_KEY=... \
-SUPABASE_DB_URL=postgresql://... \
-npm run build
+```text
+MENU_DATA_SOURCE=google_snapshot
+MENU_SNAPSHOT_URL=https://script.google.com/macros/s/DEPLOYMENT_ID/exec
+PUBLIC_SITE_URL=https://il-figlio.vercel.app
 ```
 
-`SUPABASE_DB_URL` es privada y se utiliza únicamente para obtener el snapshot editorial durante el build. Nunca debe llevar prefijo `PUBLIC_` ni llegar al navegador.
+`MENU_SNAPSHOT_URL` se consume solamente durante el build y no llega al navegador. El snapshot se vuelve a validar en Node antes de generar las páginas.
 
-### Auditoría remota
+## Publicación editorial
 
-```bash
-SUPABASE_AUDIT_DB_URL=postgresql://... \
-PUBLIC_SUPABASE_URL=https://PROJECT_REF.supabase.co \
-PUBLIC_SUPABASE_ANON_KEY=... \
-npm run supabase:audit
-```
+1. Editar `Carta` o `Estado` en la planilla.
+2. En `Publicacion`, activar la casilla `Publicar cambios` (`B2`).
+3. Apps Script valida toda la planilla.
+4. Si es válida, incrementa la revisión, actualiza el snapshot y llama al Deploy Hook.
+5. Vercel construye el sitio con el snapshot nuevo.
+6. El verificador compara la revisión con `/publication.json` y confirma el resultado en la planilla.
 
-La auditoría ejecuta el contrato SQL dentro de una transacción read-only, comprueba el RPC público como control positivo y exige que `menu_content` y `app_private` permanezcan fuera del Data API. La credencial de auditoría es privada, privilegiada y distinta de la identidad mínima usada por el build.
+Una respuesta exitosa del Deploy Hook solo significa que Vercel aceptó la solicitud. La publicación se considera terminada cuando `/publication.json` contiene la revisión y el hash esperados.
 
-## Criterios de seguridad
+## Seguridad
 
-- El sitio público solo recibe la URL y la clave anónima de Supabase.
-- El navegador no escribe directamente en tablas editoriales; el admin usa RPCs autorizadas.
-- El Deploy Hook de Vercel existe únicamente como secreto de la Edge Function.
-- `/admin/` se sirve con `noindex`, `nofollow`, `noarchive` y `no-store`.
-- El build productivo falla sin credenciales o si intenta utilizar el fixture.
-- CI inspecciona el artefacto generado en busca de valores y marcadores privados.
+- La Google Sheet permanece privada.
+- El web app expone solo el snapshot destinado a la carta pública.
+- El Deploy Hook vive en Script Properties; nunca en celdas ni en el repositorio.
+- Las credenciales de `clasp` viven en el perfil local del usuario.
+- El navegador no recibe URLs de Google ni secretos de publicación.
+- `verify-dist-secrets` rechaza secretos y marcadores administrativos en `dist/`.
 
-No guardes secretos reales en archivos `.env`; todos están ignorados salvo `.env.example`.
+Consulta [Arquitectura](docs/architecture.md) y [Activación](docs/activation.md) para el contrato y el runbook completos.

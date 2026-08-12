@@ -16,12 +16,9 @@ const cleanEnvironment = Object.fromEntries(
         "APP_ENV",
         "DEPLOY_ENV",
         "MENU_DATA_SOURCE",
+        "MENU_SNAPSHOT_URL",
         "NODE_ENV",
         "PUBLIC_SITE_URL",
-        "PUBLIC_SUPABASE_ANON_KEY",
-        "PUBLIC_SUPABASE_URL",
-        "SUPABASE_AUDIT_DB_URL",
-        "SUPABASE_DB_URL",
         "VERCEL_ENV",
       ].includes(name),
   ),
@@ -63,40 +60,45 @@ test("production can never use the fixture", async () => {
   });
 });
 
-test("Supabase builds list missing credentials", async () => {
+test("Google snapshot builds require the snapshot URL", async () => {
   await withTemporaryDirectory((directory) => {
     const result = run(validateScript, directory, {
-      MENU_DATA_SOURCE: "supabase",
+      MENU_DATA_SOURCE: "google_snapshot",
     });
 
     assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /PUBLIC_SUPABASE_URL/);
-    assert.match(result.stderr, /PUBLIC_SUPABASE_ANON_KEY/);
-    assert.match(result.stderr, /SUPABASE_DB_URL/);
+    assert.match(result.stderr, /MENU_SNAPSHOT_URL/);
   });
 });
 
-test("a complete local Supabase build environment passes", async () => {
+test("a complete local Google snapshot build environment passes", async () => {
   await withTemporaryDirectory((directory) => {
     const result = run(validateScript, directory, {
-      MENU_DATA_SOURCE: "supabase",
-      PUBLIC_SUPABASE_ANON_KEY: "local-anon-key",
-      PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
-      SUPABASE_DB_URL: "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+      MENU_DATA_SOURCE: "google_snapshot",
+      MENU_SNAPSHOT_URL: "http://127.0.0.1:8787/menu.json",
     });
 
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /Supabase source/);
+    assert.match(result.stdout, /Google snapshot source/);
   });
 });
 
-test("production Supabase builds require the canonical HTTPS site URL", async () => {
+test("production Google snapshot builds require HTTPS URLs", async () => {
   await withTemporaryDirectory((directory) => {
     const result = run(validateScript, directory, {
-      MENU_DATA_SOURCE: "supabase",
-      PUBLIC_SUPABASE_ANON_KEY: "production-anon-key",
-      PUBLIC_SUPABASE_URL: "https://example.supabase.co",
-      SUPABASE_DB_URL: "postgresql://postgres:secret@db.example.supabase.co:5432/postgres",
+      MENU_DATA_SOURCE: "google_snapshot",
+      MENU_SNAPSHOT_URL: "http://example.test/menu.json",
+      VERCEL_ENV: "production",
+    });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /MENU_SNAPSHOT_URL must use.*https:/);
+  });
+
+  await withTemporaryDirectory((directory) => {
+    const result = run(validateScript, directory, {
+      MENU_DATA_SOURCE: "google_snapshot",
+      MENU_SNAPSHOT_URL: "https://script.google.com/macros/s/example/exec",
       VERCEL_ENV: "production",
     });
 
@@ -111,7 +113,7 @@ test("dist verification accepts a clean artifact", async () => {
     await writeFile(path.join(directory, "dist", "index.html"), "<h1>Il Figlio</h1>");
 
     const result = run(verifyScript, directory, {
-      SUPABASE_DB_URL: "postgresql://private-build-connection",
+      MENU_SNAPSHOT_URL: "https://script.google.com/macros/s/public-source/exec",
     });
 
     assert.equal(result.status, 0, result.stderr);
@@ -120,23 +122,20 @@ test("dist verification accepts a clean artifact", async () => {
 
 test("dist verification rejects private values and deploy hook markers", async () => {
   await withTemporaryDirectory(async (directory) => {
-    const buildSecret = "postgresql://private-build-connection";
-    const auditSecret = "postgresql://private-audit-connection";
+    const snapshotUrl = "https://script.google.com/macros/s/public-source/exec";
     await mkdir(path.join(directory, "dist"));
     await writeFile(
       path.join(directory, "dist", "leak.js"),
-      `${buildSecret}\n${auditSecret}\nhttps://api.vercel.com/v1/integrations/deploy/example`,
+      `${snapshotUrl}\nhttps://api.vercel.com/v1/integrations/deploy/example`,
     );
 
     const result = run(verifyScript, directory, {
-      SUPABASE_AUDIT_DB_URL: auditSecret,
-      SUPABASE_DB_URL: buildSecret,
+      MENU_SNAPSHOT_URL: snapshotUrl,
     });
 
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /Sensitive content was found/);
-    assert.match(result.stderr, /SUPABASE_AUDIT_DB_URL raw value/);
-    assert.match(result.stderr, /SUPABASE_DB_URL raw value/);
+    assert.match(result.stderr, /MENU_SNAPSHOT_URL raw value/);
     assert.match(result.stderr, /api\.vercel\.com/);
   });
 });

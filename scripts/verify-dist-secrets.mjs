@@ -4,26 +4,22 @@ import { loadLocalEnv } from "./load-local-env.mjs";
 
 const rootDir = process.cwd();
 const distDir = path.resolve(rootDir, process.env.DIST_DIR?.trim() || "dist");
-const privateEnvNames = [
+const buildOnlyEnvNames = [
   "DATABASE_URL",
+  "MENU_SNAPSHOT_URL",
   "PUBLISH_WEBHOOK_SECRET",
-  "SUPABASE_ACCESS_TOKEN",
-  "SUPABASE_AUDIT_DB_URL",
-  "SUPABASE_DB_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
   "VERCEL_DEPLOY_HOOK_URL",
 ];
 const forbiddenStaticMarkers = [
-  ...privateEnvNames,
+  ...buildOnlyEnvNames,
   "api.vercel.com/v1/integrations/deploy/",
-  "sb_secret_",
   "-----BEGIN PRIVATE KEY-----",
   "-----BEGIN RSA PRIVATE KEY-----",
 ];
 
 loadLocalEnv(rootDir);
 
-const secretValueMarkers = privateEnvNames.flatMap((name) => {
+const secretValueMarkers = buildOnlyEnvNames.flatMap((name) => {
   const value = process.env[name]?.trim();
 
   if (!value || value.length < 8) {
