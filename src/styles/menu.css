@@ -331,11 +331,6 @@
   padding: var(--space-6);
 }
 
-.menu-rules h2 {
-  margin-bottom: 0;
-  font-size: 1.5rem;
-}
-
 .menu-rules p {
   margin: 0;
 }

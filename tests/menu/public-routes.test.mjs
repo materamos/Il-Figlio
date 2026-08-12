@@ -54,6 +54,21 @@ test("the carta route owns the public menu and the legacy menu URL redirects the
   assert.doesNotMatch(carta, /Supabase|supabase|menu-runtime-state|data-availability/);
 });
 
+test("the not-found route keeps the branded recovery path minimal", async () => {
+  const [notFound, globalCss] = await Promise.all([
+    readSource("src/pages/404.astro"),
+    readSource("src/styles/global.css"),
+  ]);
+
+  assert.match(notFound, /bodyClass="not-found-body"/);
+  assert.match(notFound, /aria-label="Il Figlio, volver al inicio"/);
+  assert.match(notFound, /class="not-found__number" aria-hidden="true"/);
+  assert.match(notFound, /href="\/carta\/">Ver la carta/);
+  assert.doesNotMatch(notFound, /<style>/);
+  assert.match(globalCss, /\.not-found-page\s*{/);
+  assert.match(globalCss, /\.not-found__mark\s*{/);
+});
+
 test("publication metadata is generated from the same immutable menu snapshot", async () => {
   const publicationRoute = await readSource("src/pages/publication.json.ts");
 
