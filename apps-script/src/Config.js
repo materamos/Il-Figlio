@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars -- Apps Script combines project files in one global scope. */
 
 var APP_CONFIG = Object.freeze({
+  sheetSchemaVersion: 2,
   spreadsheetLocale: "es_AR",
   timeZone: "America/Argentina/Buenos_Aires",
   snapshotFileName: "published-menu.json",
@@ -11,6 +12,10 @@ var APP_CONFIG = Object.freeze({
     menu: "Carta",
     state: "Estado",
     publication: "Publicacion",
+  }),
+  editorTabs: Object.freeze({
+    publication: "Publicar",
+    local: "Local",
   }),
 });
 
@@ -28,6 +33,13 @@ var MENU_HEADERS = Object.freeze([
 ]);
 
 var STATE_HEADERS = Object.freeze(["campo", "valor"]);
+
+var EDITOR_V2_LOCAL_HEADERS = Object.freeze(["Qué querés cambiar", "Valor"]);
+var EDITOR_V2_FIELD_LIMITS = Object.freeze({
+  name: 80,
+  description: 240,
+  message: 160,
+});
 
 var CATEGORY_DEFINITIONS = Object.freeze([
   Object.freeze({
@@ -74,6 +86,41 @@ var PRICE_COLUMNS = Object.freeze({
   portion: 9,
 });
 
+var EDITOR_V2_CATEGORY_DEFINITIONS = Object.freeze([
+  Object.freeze({
+    categoryId: "classic",
+    sheetName: "Clásicas",
+    priceKinds: Object.freeze(["whole", "slice"]),
+  }),
+  Object.freeze({
+    categoryId: "filled",
+    sheetName: "Rellenas",
+    priceKinds: Object.freeze(["whole"]),
+  }),
+  Object.freeze({
+    categoryId: "gourmet",
+    sheetName: "Gourmet",
+    priceKinds: Object.freeze(["whole"]),
+  }),
+  Object.freeze({
+    categoryId: "empanadas",
+    sheetName: "Empanadas",
+    priceKinds: Object.freeze(["unit"]),
+  }),
+  Object.freeze({
+    categoryId: "extras",
+    sheetName: "Extras",
+    priceKinds: Object.freeze(["portion"]),
+  }),
+]);
+
+var EDITOR_V2_PRICE_LABELS = Object.freeze({
+  whole: "Entera",
+  slice: "Porción",
+  unit: "Unidad",
+  portion: "Porción",
+});
+
 var STATUS_BY_SHEET_LABEL = Object.freeze({
   Abierto: "open",
   Cerrado: "closed",
@@ -95,6 +142,8 @@ var SCRIPT_PROPERTY_KEYS = Object.freeze({
   dashboardStatus: "DASHBOARD_STATUS",
   dashboardDetail: "DASHBOARD_DETAIL",
   draftDirty: "DRAFT_DIRTY",
+  sheetSchemaVersion: "SHEET_SCHEMA_VERSION",
+  sheetV1BackupFileId: "SHEET_V1_BACKUP_FILE_ID",
 });
 
 var SNAPSHOT_SLOTS = Object.freeze(["A", "B"]);
@@ -121,6 +170,33 @@ var PUBLICATION_LABELS = Object.freeze([
   ["Última publicación", "—"],
   ["Detalle", "La carta todavía no fue publicada."],
   ["Sitio público", ""],
+  ["Hash publicado", ""],
+  ["Hash pendiente", ""],
+  ["Solicitud iniciada", ""],
+]);
+
+var EDITOR_V2_PUBLICATION_CELLS = Object.freeze({
+  publish: "B2",
+  status: "B3",
+  publishedAt: "B4",
+  detail: "B5",
+  siteUrl: "B6",
+  publishedRevision: "B7",
+  pendingRevision: "B8",
+  publishedHash: "B9",
+  pendingHash: "B10",
+  pendingRequestedAt: "B11",
+});
+
+var EDITOR_V2_PUBLICATION_LABELS = Object.freeze([
+  ["Publicación", "Estado"],
+  ["Publicar cambios", false],
+  ["Estado", "Todavía no publicado"],
+  ["Última actualización", "—"],
+  ["Detalle", "Prepará la carta y publicá la primera actualización."],
+  ["Abrir menú", ""],
+  ["Revisión publicada", 0],
+  ["Revisión pendiente", "—"],
   ["Hash publicado", ""],
   ["Hash pendiente", ""],
   ["Solicitud iniciada", ""],

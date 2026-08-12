@@ -29,6 +29,9 @@ const context = vm.createContext({
         getDataAsString: () => Buffer.from(value).toString("utf8"),
       };
     },
+    getUuid() {
+      return "00000000-0000-4000-8000-000000000001";
+    },
   },
 });
 
@@ -37,6 +40,7 @@ for (const fileName of [
   "Seed.js",
   "Validation.js",
   "Snapshot.js",
+  "EditorV2.js",
   "SheetReader.js",
   "Publishing.js",
 ]) {
@@ -67,6 +71,7 @@ const seededMenu = () => [
   plain(context.MENU_HEADERS),
   ...plain(context.INITIAL_MENU_ROWS),
 ];
+const migratedEditor = () => plain(context.prepareV2MigrationData_(seededMenu(), validState()));
 
 test("the canonical seed maps all 24 products into the versioned wire shape", () => {
   const result = context.validateAndBuildDraft_(seededMenu(), validState());
@@ -192,12 +197,12 @@ test("publication confirmation requires the exact revision, hash and valid build
 
 test("a confirmed revision keeps later Sheet edits visibly unpublished", () => {
   assert.deepEqual(plain(context.buildPublishedDashboardState_(4, false)), {
-    status: "Publicado — revisión 4",
-    detail: "La revisión y el hash coinciden con el sitio público.",
+    status: "Menú actualizado",
+    detail: "Los cambios ya están visibles en el sitio.",
   });
   assert.deepEqual(plain(context.buildPublishedDashboardState_(4, true)), {
-    status: "Cambios sin publicar",
-    detail: "La revisión 4 está publicada, pero hay cambios posteriores que siguen en borrador.",
+    status: "Hay cambios pendientes",
+    detail: "El menú está actualizado, pero hiciste cambios nuevos que todavía no publicaste.",
   });
 });
 
@@ -310,4 +315,258 @@ test("configuration validators accept only the intended HTTPS endpoints", () => 
   assert.throws(() => context.validatePublicSiteUrl_("http://ilfiglio.example"));
   assert.throws(() => context.validatePublicSiteUrl_("https://ilfiglio.example/carta"));
   assert.throws(() => context.validatePublicSiteUrl_("https://ilfiglio.example?preview=1"));
+});
+
+test("schema v2 is complete only with every operational tab and tolerates unrelated tabs", () => {
+  const v2Names = plain(context.editorV2SheetNames_());
+  const legacyNames = plain(context.legacySheetNames_());
+
+  assert.equal(context.detectSheetSchemaFromNames_([...v2Names, "Notas"]), "v2");
+  assert.equal(context.detectSheetSchemaFromNames_(legacyNames), "legacy");
+  assert.equal(context.detectSheetSchemaFromNames_([...v2Names, ...legacyNames]), "dual");
+  assert.equal(context.detectSheetSchemaFromNames_([...legacyNames, v2Names[0]]), "partial");
+  assert.equal(context.detectSheetSchemaFromNames_(v2Names.slice(0, -1)), "partial");
+  assert.equal(context.detectSheetSchemaFromNames_(["Notas"]), "unknown");
+});
+
+test("legacy rows migrate to semantic category tabs without changing the canonical menu", () => {
+  const migration = migratedEditor();
+  const validation = context.validateAndBuildEditorV2Draft_(
+    migration.categorySheets,
+    migration.localSheet,
+  );
+
+  assert.equal(validation.ok, true, plain(validation.issues));
+  assert.equal(context.draftsAreCanonicallyEqual_(migration.legacyDraft, validation.draft), true);
+  assert.deepEqual(migration.categorySheets["Clásicas"][0], [
+    "Producto",
+    "Entera",
+    "Porción",
+    "Mostrar",
+    "Descripción",
+    "_id",
+  ]);
+  assert.deepEqual(migration.categorySheets.Rellenas[0], [
+    "Producto",
+    "Entera",
+    "Mostrar",
+    "Descripción",
+    "_id",
+  ]);
+  assert.deepEqual(migration.categorySheets.Empanadas[0], [
+    "Producto",
+    "Unidad",
+    "Mostrar",
+    "Descripción",
+    "_id",
+  ]);
+  assert.deepEqual(migration.categorySheets.Extras[0], [
+    "Producto",
+    "Porción",
+    "Mostrar",
+    "Descripción",
+    "_id",
+  ]);
+  assert.deepEqual(migration.categorySheets["Clásicas"][1], [
+    "Mozzarella",
+    14000,
+    2500,
+    true,
+    "Salsa de tomate, mozzarella, orégano o albahaca y aceitunas.",
+    "clasica-mozzarella",
+  ]);
+});
+
+test("row position defines product order in each category", () => {
+  const migration = migratedEditor();
+  const classics = migration.categorySheets["Clásicas"];
+  [classics[1], classics[2]] = [classics[2], classics[1]];
+  const validation = context.validateAndBuildEditorV2Draft_(
+    migration.categorySheets,
+    migration.localSheet,
+  );
+
+  assert.equal(validation.ok, true, plain(validation.issues));
+  assert.deepEqual(
+    plain(validation.draft.categories[0].items.slice(0, 2).map((item) => [item.name, item.order_index])),
+    [["Fugazza", 1], ["Mozzarella", 2]],
+  );
+});
+
+test("an incomplete hidden row stays as a draft and becomes required when shown", () => {
+  const migration = migratedEditor();
+  migration.categorySheets.Rellenas.push([
+    "Nueva pizza",
+    "",
+    false,
+    "Descripción todavía en preparación.",
+    "rellena-nueva-pizza",
+  ]);
+
+  const hidden = context.validateAndBuildEditorV2Draft_(
+    migration.categorySheets,
+    migration.localSheet,
+  );
+  assert.equal(hidden.ok, true, plain(hidden.issues));
+  assert.equal(hidden.draft.categories[1].items.some((item) => item.id === "rellena-nueva-pizza"), false);
+
+  migration.categorySheets.Rellenas.at(-1)[2] = true;
+  const shown = context.validateAndBuildEditorV2Draft_(
+    migration.categorySheets,
+    migration.localSheet,
+  );
+  assert.equal(shown.ok, false);
+  assert.ok(plain(shown.issues).some((issue) =>
+    issue.sheet === "Rellenas" && issue.column === 2 && issue.message.includes("precio")));
+});
+
+test("a blank Mostrar checkbox is treated as hidden for a newly typed draft row", () => {
+  const migration = migratedEditor();
+  migration.categorySheets.Gourmet.push([
+    "Borrador nuevo",
+    "",
+    "",
+    "",
+    "gourmet-borrador-nuevo",
+  ]);
+  const validation = context.validateAndBuildEditorV2Draft_(
+    migration.categorySheets,
+    migration.localSheet,
+  );
+
+  assert.equal(validation.ok, true, plain(validation.issues));
+  assert.equal(validation.draft.categories[2].items.some((item) =>
+    item.id === "gourmet-borrador-nuevo"), false);
+});
+
+test("missing and copied internal IDs are regenerated without changing valid IDs", () => {
+  const definition = plain(context.EDITOR_V2_CATEGORY_DEFINITIONS[1]);
+  let sequence = 0;
+  const values = [
+    ["Fugazzeta", 24000, true, "", "rellena-fugazzeta"],
+    ["Nueva", "", false, "", ""],
+    ["Copia", 24000, true, "", "rellena-fugazzeta"],
+  ];
+  const normalized = context.normalizeEditorV2Ids_(values, definition, {}, () => {
+    sequence += 1;
+    return `00000000-0000-4000-8000-${String(sequence).padStart(12, "0")}`;
+  });
+
+  assert.equal(normalized.changed, true);
+  assert.equal(normalized.ids[0][0], "rellena-fugazzeta");
+  assert.match(normalized.ids[1][0], /^00000000-0000-4000-8000-/);
+  assert.match(normalized.ids[2][0], /^00000000-0000-4000-8000-/);
+  assert.notEqual(normalized.ids[1][0], normalized.ids[2][0]);
+});
+
+test("clearing every editable cell also clears the hidden internal ID", () => {
+  const definition = plain(context.EDITOR_V2_CATEGORY_DEFINITIONS[1]);
+  const values = [
+    ["", "", false, "", "rellena-producto-eliminado"],
+  ];
+  const normalized = context.normalizeEditorV2Ids_(values, definition, {}, () => {
+    throw new Error("an empty row must not receive a new ID");
+  });
+
+  assert.equal(context.isEmptyEditorV2Row_(values[0], definition), true);
+  assert.equal(normalized.changed, true);
+  assert.equal(normalized.ids[0][0], "");
+});
+
+test("visible rows reject duplicate names, invalid prices and overlong copy", () => {
+  const migration = migratedEditor();
+  const classics = migration.categorySheets["Clásicas"];
+  classics[2][0] = "  mozzarella  ";
+  classics[2][1] = 12.5;
+  classics[2][4] = "x".repeat(241);
+  const validation = context.validateAndBuildEditorV2Draft_(
+    migration.categorySheets,
+    migration.localSheet,
+  );
+  const issues = plain(validation.issues);
+
+  assert.equal(validation.ok, false);
+  assert.ok(issues.some((issue) => issue.sheet === "Clásicas" && issue.column === 1
+    && issue.message.includes("visible")));
+  assert.ok(issues.some((issue) => issue.sheet === "Clásicas" && issue.column === 2
+    && issue.message.includes("precio")));
+  assert.ok(issues.some((issue) => issue.sheet === "Clásicas" && issue.column === 5
+    && issue.message.includes("240")));
+});
+
+test("local state keeps a closed dropdown contract and a 160-character message", () => {
+  const migration = migratedEditor();
+  migration.localSheet[1][1] = "Pausado";
+  migration.localSheet[2][1] = "x".repeat(161);
+  const validation = context.validateAndBuildEditorV2Draft_(
+    migration.categorySheets,
+    migration.localSheet,
+  );
+  const paths = plain(validation.issues.map((issue) => issue.path));
+
+  assert.equal(validation.ok, false);
+  assert.ok(paths.includes("Local!B2"));
+  assert.ok(paths.includes("Local!B3"));
+});
+
+test("editor errors use human sheet and row labels instead of cell notation", () => {
+  const text = context.formatIssues_([
+    { sheet: "Clásicas", row: 5, column: 2, path: "Clásicas!B5", message: "Falta el precio." },
+  ]);
+  assert.equal(text, "• Clásicas, fila 5: Falta el precio.");
+  assert.equal(text.includes("!B5"), false);
+});
+
+test("row, column and tab structure changes dirty the draft while formatting does not", () => {
+  for (const type of [
+    "INSERT_ROW",
+    "REMOVE_ROW",
+    "INSERT_COLUMN",
+    "REMOVE_COLUMN",
+    "INSERT_GRID",
+    "REMOVE_GRID",
+    "OTHER",
+  ]) {
+    assert.equal(context.isDraftStructureChange_(type), true, type);
+  }
+  assert.equal(context.isDraftStructureChange_("FORMAT"), false);
+  assert.equal(context.isDraftStructureChange_("EDIT"), false);
+});
+
+test("only one completely empty sheet qualifies for a fresh v2 bootstrap", () => {
+  const makeSheet = (values) => ({
+    getDataRange: () => ({
+      getDisplayValues: () => values,
+    }),
+  });
+  assert.equal(context.isBootstrapCandidate_({
+    getSheets: () => [makeSheet([[""]])],
+  }), true);
+  assert.equal(context.isBootstrapCandidate_({
+    getSheets: () => [makeSheet([["contenido"]])],
+  }), false);
+  assert.equal(context.isBootstrapCandidate_({
+    getSheets: () => [makeSheet([[""]]), makeSheet([[""]])],
+  }), false);
+});
+
+test("both legacy and v2 publication checkboxes remain valid during migration", () => {
+  const makeEvent = (sheetName) => {
+    const sheet = {
+      getName: () => sheetName,
+      getRange: () => ({ getValue: () => true }),
+    };
+    return {
+      range: {
+        getSheet: () => sheet,
+        getRow: () => 2,
+        getLastRow: () => 2,
+        getColumn: () => 2,
+        getLastColumn: () => 2,
+      },
+    };
+  };
+
+  assert.equal(context.isPublishEdit_(makeEvent("Publicacion")), true);
+  assert.equal(context.isPublishEdit_(makeEvent("Publicar")), true);
 });

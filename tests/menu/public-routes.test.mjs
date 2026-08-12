@@ -8,9 +8,11 @@ const root = fileURLToPath(new URL("../..", import.meta.url));
 const readSource = (relativePath) => readFile(path.join(root, relativePath), "utf8");
 
 test("the landing links to the separate carta route and migrates the legacy hash", async () => {
-  const [landing, redirectScript] = await Promise.all([
+  const [landing, redirectScript, businessStatus, globalCss] = await Promise.all([
     readSource("src/pages/index.astro"),
     readSource("public/scripts/legacy-carta-redirect.js"),
+    readSource("src/components/BusinessStatus.astro"),
+    readSource("src/styles/global.css"),
   ]);
 
   assert.match(landing, /href="\/carta\/">Ver la carta/);
@@ -21,6 +23,14 @@ test("the landing links to the separate carta route and migrates the legacy hash
   assert.match(redirectScript, /window\.location\.replace\("\/carta\/"\)/);
   assert.match(landing, /<footer class="site-footer">/);
   assert.match(landing, /<section class="contact-section"/);
+  assert.match(landing, /aria-label={`Llamar a Il Figlio al \${/);
+  assert.match(landing, /<p class="hero__lede">{ilFiglioBusiness\.description}<\/p>/);
+  assert.doesNotMatch(landing, /hero__lede[\s\S]{0,120}hours\.display/);
+  assert.match(businessStatus, /{openingHours}\. {status\.message \|\| current\.detail}/);
+  assert.doesNotMatch(globalCss, /html\s*{[^}]*min-width:/);
+  assert.match(globalCss, /\.site-header\s*{[^}]*flex-wrap: wrap/);
+  assert.match(globalCss, /@media \(max-width: 22rem\)/);
+  assert.match(globalCss, /\.contact-list a:active/);
   assert.doesNotMatch(landing, /<MenuSection/);
   assert.doesNotMatch(landing, /Supabase|supabase|menu-runtime-state/);
 });

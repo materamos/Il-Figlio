@@ -114,7 +114,8 @@ const getStickyActivationOffset = () => {
   return Number.parseFloat(value) || 0;
 };
 
-const getStickyMenuIndexBottom = () => menuIndex.getBoundingClientRect().bottom;
+const getStickyMenuIndexBottom = () =>
+  getStickyActivationOffset() + menuIndex.getBoundingClientRect().height;
 
 const getScrollBehavior = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
@@ -139,7 +140,7 @@ const centerMenuIndexLink = (link) => {
 };
 
 const setActiveSection = (sectionId) => {
-  if (!sectionId || sectionId === activeSectionId) {
+  if (sectionId === activeSectionId) {
     return;
   }
 
@@ -151,7 +152,7 @@ const setActiveSection = (sectionId) => {
     link.classList.toggle("menu-index__link--active", isActive);
 
     if (isActive) {
-      link.setAttribute("aria-current", "true");
+      link.setAttribute("aria-current", "location");
       centerMenuIndexLink(link);
     } else {
       link.removeAttribute("aria-current");
@@ -159,7 +160,12 @@ const setActiveSection = (sectionId) => {
   }
 };
 
-const scrollToSection = (section, hash, sectionId) => {
+const scrollToSection = (
+  section,
+  hash,
+  sectionId,
+  { behavior = getScrollBehavior(), updateHistory = true } = {},
+) => {
   setMenuIndexStuck(true);
 
   window.requestAnimationFrame(() => {
@@ -178,10 +184,10 @@ const scrollToSection = (section, hash, sectionId) => {
 
     window.scrollTo({
       top: targetY,
-      behavior: getScrollBehavior(),
+      behavior,
     });
 
-    if (hash && window.location.hash !== hash) {
+    if (updateHistory && hash && window.location.hash !== hash) {
       window.history.pushState(null, "", hash);
     }
   });
@@ -202,7 +208,7 @@ const getActiveSectionId = () => {
     window.innerHeight - 1,
     menuIndex.getBoundingClientRect().bottom + activeSectionOffset + activeSectionEpsilon,
   );
-  let activeTarget = menuSectionTargets[0];
+  let activeTarget;
 
   for (const target of menuSectionTargets) {
     if (target.section.getBoundingClientRect().top <= activationLine + activeSectionTolerance) {
@@ -212,7 +218,46 @@ const getActiveSectionId = () => {
     }
   }
 
-  return activeTarget.sectionId;
+  return activeTarget?.sectionId;
+};
+
+const getHashTarget = () => {
+  if (!window.location.hash) {
+    return undefined;
+  }
+
+  let sectionId;
+
+  try {
+    sectionId = decodeURIComponent(window.location.hash.slice(1));
+  } catch {
+    return undefined;
+  }
+
+  return menuSectionTargets.find((target) => target.sectionId === sectionId);
+};
+
+const syncLocationHash = () => {
+  const target = getHashTarget();
+
+  if (!target) {
+    scheduleMenuIndexUpdate();
+    return;
+  }
+
+  setActiveSection(target.sectionId);
+  scrollToSection(target.section, undefined, target.sectionId, {
+    behavior: "auto",
+    updateHistory: false,
+  });
+};
+
+const syncPageLocation = () => {
+  if (getHashTarget()) {
+    syncLocationHash();
+  } else {
+    scheduleMenuIndexUpdate();
+  }
 };
 
 const updateMenuIndexState = () => {
@@ -268,12 +313,18 @@ if (menuIndex) {
     });
   }
 
-  updateMenuIndexState();
-  window.addEventListener("hashchange", scheduleMenuIndexUpdate);
+  if (getHashTarget()) {
+    syncLocationHash();
+  } else {
+    updateMenuIndexState();
+  }
+
+  window.addEventListener("hashchange", syncLocationHash);
+  window.addEventListener("load", syncPageLocation, { once: true });
   window.addEventListener("scroll", scheduleMenuIndexUpdate, { passive: true });
   window.addEventListener("resize", scheduleMenuIndexUpdate);
   window.addEventListener("orientationchange", scheduleMenuIndexUpdate);
-  window.addEventListener("pageshow", scheduleMenuIndexUpdate);
+  window.addEventListener("pageshow", syncPageLocation);
 
   if (window.visualViewport) {
     window.visualViewport.addEventListener("scroll", scheduleMenuIndexUpdate, { passive: true });

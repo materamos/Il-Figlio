@@ -15,7 +15,7 @@ const presentation = {
   },
   closed: {
     label: "Ahora estamos cerrados",
-    detail: `${openingHours}. Consultanos por WhatsApp.`,
+    detail: "Consultanos por WhatsApp.",
     tone: "closed",
   },
   sold_out: {
@@ -37,5 +37,7 @@ const current = presentation[status.status];
     <span class="business-status__dot" aria-hidden="true"></span>
     <span>{current.label}</span>
   </p>
-  <p class="business-status__detail">{status.message || current.detail}</p>
+  <p class="business-status__detail">
+    {openingHours}. {status.message || current.detail}
+  </p>
 </div>

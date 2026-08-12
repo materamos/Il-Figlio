@@ -32,7 +32,11 @@ const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComp
         <BrandMark class="site-header__mark" decorative={true} size={1080} />
         <span class="site-header__name">IL FIGLIO</span>
       </a>
-      <a class="site-header__contact" href={phoneHref}>
+      <a
+        class="site-header__contact"
+        href={phoneHref}
+        aria-label={`Llamar a Il Figlio al ${ilFiglioBusiness.contact.phoneDisplay}`}
+      >
         {ilFiglioBusiness.contact.phoneDisplay}
       </a>
     </header>
@@ -41,9 +45,7 @@ const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComp
       <div class="hero__copy">
         <p class="hero__eyebrow">Pizzería de barrio · Lanús Oeste</p>
         <h1 class="hero__title" id="hero-title">Il Figlio</h1>
-        <p class="hero__lede">
-          {ilFiglioBusiness.description} {ilFiglioBusiness.hours.display}.
-        </p>
+        <p class="hero__lede">{ilFiglioBusiness.description}</p>
       </div>
 
       <BusinessStatus

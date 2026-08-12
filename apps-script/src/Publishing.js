@@ -4,11 +4,14 @@ function handlePublishEdit(event) {
   if (!event || !event.range) return;
 
   if (isPublishEdit_(event)) {
-    event.range.getSheet().getRange(PUBLICATION_CELLS.publish).setValue(false);
+    event.range.getSheet().getRange("B2").setValue(false);
     try {
       publishChanges();
     } catch (error) {
-      setDashboardState_("Error de publicación", errorMessage_(error));
+      setDashboardState_(
+        "No se pudo publicar",
+        "Ocurrió un error inesperado. Los cambios no se publicaron. Volvé a intentarlo.",
+      );
       renderPublicationDashboard_();
       throw error;
     }
@@ -16,11 +19,25 @@ function handlePublishEdit(event) {
   }
 
   var sheetName = event.range.getSheet().getName();
-  if (sheetName === APP_CONFIG.tabs.menu || sheetName === APP_CONFIG.tabs.state) {
+  if (isDraftEditSheetName_(sheetName)) {
     return withScriptLock_(function () {
+      if (editorV2CategoryBySheetName_(sheetName)) {
+        ensureEditorV2ItemIds_(getProjectSpreadsheet_());
+      }
       markDraftDirty_();
     });
   }
+}
+
+function handleSheetChange(event) {
+  if (!event || !isDraftStructureChange_(event.changeType)) return;
+  return withScriptLock_(function () {
+    var spreadsheet = getProjectSpreadsheet_();
+    var schema = detectSheetSchema_(spreadsheet);
+    if (schema === "v2" || schema === "dual") ensureEditorV2ItemIds_(spreadsheet);
+    markDraftDirty_();
+    return { ok: true, changeType: event.changeType };
+  });
 }
 
 function publishChanges() {
@@ -40,20 +57,26 @@ function publishChanges() {
         writeSnapshotChunks_(properties, availableSnapshot);
       }
       setDashboardState_(
-        "Reintentando revisión " + pendingRevision,
-        "La revisión pendiente se enviará otra vez; los cambios posteriores siguen como borrador.",
+        "Publicando…",
+        "Volvimos a solicitar la actualización. Los cambios posteriores siguen pendientes.",
       );
       renderPublicationDashboard_();
       return requestDeployment_(pendingRevision, pendingHash);
     }
 
-    setDashboardState_("Validando", "Revisando la carta completa antes de publicar.");
+    setDashboardState_("Revisando cambios…", "Estamos comprobando productos y precios.");
     renderPublicationDashboard_();
 
     var validation = readAndValidateDraft_();
     highlightValidationIssues_(validation.issues);
     if (!validation.ok) {
-      setDashboardState_("Error de validación", formatIssues_(validation.issues));
+      setDashboardState_(
+        "No se pudo publicar",
+        "Corregí " + validation.issues.length + " campo"
+          + (validation.issues.length === 1 ? "" : "s") + " marcado"
+          + (validation.issues.length === 1 ? "" : "s") + " en rojo:\n"
+          + formatIssues_(validation.issues),
+      );
       renderPublicationDashboard_();
       return { ok: false, reason: "validation", issues: validation.issues };
     }
@@ -73,8 +96,8 @@ function publishChanges() {
       DRAFT_DIRTY: "false",
     });
     setDashboardState_(
-      "Despliegue solicitado",
-      "Esperando que Vercel sirva la revisión " + nextRevision + ".",
+      "Publicando…",
+      "La actualización puede tardar unos minutos. No hace falta volver a marcar la casilla.",
     );
     renderPublicationDashboard_();
     return requestDeployment_(nextRevision, snapshot.source_hash);
@@ -95,7 +118,10 @@ function verifyPublishedRevision() {
 
     var siteUrl = properties.getProperty(SCRIPT_PROPERTY_KEYS.publicSiteUrl);
     if (!siteUrl) {
-      setDashboardState_("Configuración incompleta", "Falta PUBLIC_SITE_URL en Script Properties.");
+      setDashboardState_(
+        "No se pudo publicar",
+        "Falta completar la configuración técnica. Pedile ayuda a la persona administradora.",
+      );
       renderPublicationDashboard_();
       return { ok: false, state: "configuration" };
     }
@@ -147,15 +173,14 @@ function verifyPublishedRevision() {
 function buildPublishedDashboardState_(revision, draftDirty) {
   if (draftDirty) {
     return {
-      status: "Cambios sin publicar",
-      detail: "La revisión " + revision
-        + " está publicada, pero hay cambios posteriores que siguen en borrador.",
+      status: "Hay cambios pendientes",
+      detail: "El menú está actualizado, pero hiciste cambios nuevos que todavía no publicaste.",
     };
   }
 
   return {
-    status: "Publicado — revisión " + revision,
-    detail: "La revisión y el hash coinciden con el sitio público.",
+    status: "Menú actualizado",
+    detail: "Los cambios ya están visibles en el sitio.",
   };
 }
 
@@ -164,8 +189,8 @@ function requestDeployment_(revision, sourceHash) {
   var hookUrl = properties.getProperty(SCRIPT_PROPERTY_KEYS.deployHookUrl);
   if (!hookUrl) {
     setDashboardState_(
-      "Configuración incompleta",
-      "Falta VERCEL_DEPLOY_HOOK_URL. La revisión " + revision + " quedó preparada para reintentar.",
+      "No se pudo publicar",
+      "Falta completar la configuración técnica. La actualización quedó guardada para reintentar.",
     );
     renderPublicationDashboard_();
     return { ok: false, reason: "configuration", revision: revision };
@@ -183,8 +208,8 @@ function requestDeployment_(revision, sourceHash) {
     });
   } catch (error) {
     setDashboardState_(
-      "Error al solicitar despliegue",
-      "La revisión " + revision + " quedó preparada. Volvé a marcar Publicar para reintentar. "
+      "No se pudo publicar",
+      "La actualización quedó guardada. Esperá un momento y volvé a marcar Publicar cambios. "
         + errorMessage_(error),
     );
     renderPublicationDashboard_();
@@ -194,17 +219,16 @@ function requestDeployment_(revision, sourceHash) {
   var statusCode = response.getResponseCode();
   if (statusCode < 200 || statusCode >= 300) {
     setDashboardState_(
-      "Error al solicitar despliegue",
-      "Vercel respondió HTTP " + statusCode + ". La revisión " + revision
-        + " quedó preparada para reintentar.",
+      "No se pudo publicar",
+      "La actualización quedó guardada. Esperá un momento y volvé a marcar Publicar cambios.",
     );
     renderPublicationDashboard_();
     return { ok: false, reason: "hook", statusCode: statusCode, revision: revision };
   }
 
   setDashboardState_(
-    "Despliegue solicitado",
-    "Vercel aceptó la revisión " + revision + ". La confirmación se actualizará automáticamente.",
+    "Publicando…",
+    "La actualización puede tardar unos minutos. Esta pantalla se confirmará automáticamente.",
   );
   renderPublicationDashboard_();
   return { ok: true, revision: revision, sourceHash: sourceHash };
@@ -217,13 +241,13 @@ function keepPublicationPending_(properties, revision, reason) {
 
   if (timedOut) {
     setDashboardState_(
-      "Revisión " + revision + " sin confirmar",
-      reason + " Marcá Publicar para reintentar el mismo snapshot.",
+      "No se pudo confirmar",
+      "El sitio todavía no confirmó la actualización. Marcá Publicar cambios para reintentar.",
     );
   } else {
     setDashboardState_(
-      "Esperando revisión " + revision,
-      reason + " La verificación se repetirá automáticamente.",
+      "Publicando…",
+      "El sitio todavía se está actualizando. La comprobación se repetirá automáticamente.",
     );
   }
   renderPublicationDashboard_();
@@ -262,8 +286,9 @@ function recoverPendingSnapshot_(properties, revision, expectedHash) {
   highlightValidationIssues_(validation.issues);
   if (!validation.ok) {
     setDashboardState_(
-      "No se pudo recuperar la revisión " + revision,
-      "El snapshot no está disponible y el borrador actual tiene errores de validación.",
+      "No se pudo publicar",
+      "La actualización guardada no se pudo recuperar y hay campos para corregir:\n"
+        + formatIssues_(validation.issues),
     );
     renderPublicationDashboard_();
     return { ok: false, reason: "pending_snapshot_validation", issues: validation.issues };
@@ -274,8 +299,8 @@ function recoverPendingSnapshot_(properties, revision, expectedHash) {
   var snapshot = buildPublishedSnapshot_(validation.draft, revision, publishedAt);
   if (snapshot.source_hash !== expectedHash) {
     setDashboardState_(
-      "No se pudo recuperar la revisión " + revision,
-      "El borrador cambió después de preparar esa revisión. Corregí los cambios antes de reintentar.",
+      "Hay cambios pendientes",
+      "La carta cambió durante la actualización anterior. Revisá los campos y volvé a publicar.",
     );
     renderPublicationDashboard_();
     return { ok: false, reason: "pending_snapshot_mismatch", revision: revision };
@@ -496,7 +521,10 @@ function decodeSnapshotChunks_(chunks) {
 
 function isPublishEdit_(event) {
   var range = event && event.range;
-  if (!range || range.getSheet().getName() !== APP_CONFIG.tabs.publication) return false;
+  if (!range) return false;
+  var sheetName = range.getSheet().getName();
+  if (sheetName !== APP_CONFIG.tabs.publication
+    && sheetName !== APP_CONFIG.editorTabs.publication) return false;
 
   var targetRow = 2;
   var targetColumn = 2;
@@ -505,7 +533,7 @@ function isPublishEdit_(event) {
     && range.getColumn() <= targetColumn
     && range.getLastColumn() >= targetColumn;
   return coversTarget
-    && range.getSheet().getRange(PUBLICATION_CELLS.publish).getValue() === true;
+    && range.getSheet().getRange("B2").getValue() === true;
 }
 
 function parseStoredPositiveInteger_(value) {

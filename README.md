@@ -55,7 +55,7 @@ npm run build
 | `npm run apps-script:status` | Muestra qué archivos enviaría `clasp`. |
 | `npm run apps-script:push` | Actualiza el Apps Script vinculado. |
 | `npm run apps-script:open` | Abre el Apps Script vinculado. |
-| `npm run apps-script:deploy` | Crea una versión desplegada del web app. |
+| `npm run apps-script:update-deployment -- DEPLOYMENT_ID --versionNumber VERSION` | Actualiza la implementación web existente sin cambiar su URL; requiere el ID y la versión. |
 
 ## Fuentes de datos
 
@@ -80,12 +80,13 @@ PUBLIC_SITE_URL=https://il-figlio.vercel.app
 
 ## Publicación editorial
 
-1. Editar `Carta` o `Estado` en la planilla.
-2. En `Publicacion`, activar la casilla `Publicar cambios` (`B2`).
-3. Apps Script valida toda la planilla.
-4. Si es válida, incrementa la revisión, actualiza el snapshot y llama al Deploy Hook.
-5. Vercel construye el sitio con el snapshot nuevo.
-6. El verificador compara la revisión con `/publication.json` y confirma el resultado en la planilla.
+1. Editar la pestaña de la categoría correspondiente. El orden se toma de las filas y `Mostrar` permite ocultar un producto sin eliminarlo.
+2. Cambiar `Estado` o el mensaje público desde `Local` si hace falta.
+3. En `Publicar`, activar la casilla `Publicar cambios` (`B2`).
+4. Apps Script valida toda la planilla.
+5. Si es válida, incrementa la revisión, actualiza el snapshot y llama al Deploy Hook.
+6. Vercel construye el sitio con el snapshot nuevo.
+7. El verificador compara la revisión con `/publication.json` y confirma el resultado en la planilla.
 
 Una respuesta exitosa del Deploy Hook solo significa que Vercel aceptó la solicitud. La publicación se considera terminada cuando `/publication.json` contiene la revisión y el hash esperados.
 

@@ -39,8 +39,17 @@ const phoneHref = "tel:+541144097322";
         <BrandMark class="site-header__mark" decorative={true} size={1080} />
         <span class="site-header__name">IL FIGLIO</span>
       </a>
-      <a class="site-header__contact" href={phoneHref}>
+      <a class="site-header__contact menu-header__phone" href={phoneHref}>
         {ilFiglioBusiness.contact.phoneDisplay}
+      </a>
+      <a
+        class="menu-header__whatsapp"
+        href={whatsappHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Contactar por WhatsApp"
+      >
+        <WhatsAppIcon />
       </a>
     </header>
 

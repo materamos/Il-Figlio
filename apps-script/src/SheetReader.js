@@ -1,29 +1,7 @@
 /* eslint-disable no-unused-vars, no-undef -- Apps Script combines project files in one global scope. */
 
 function setupProject() {
-  return withScriptLock_(function () {
-    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    if (!spreadsheet) {
-      throw new Error("Abrí la planilla vinculada antes de ejecutar setupProject.");
-    }
-
-    spreadsheet.setSpreadsheetLocale(APP_CONFIG.spreadsheetLocale);
-    spreadsheet.setSpreadsheetTimeZone(APP_CONFIG.timeZone);
-    PropertiesService.getScriptProperties().setProperty(
-      SCRIPT_PROPERTY_KEYS.spreadsheetId,
-      spreadsheet.getId(),
-    );
-
-    var sheets = ensureRequiredSheets_(spreadsheet);
-    setupMenuSheet_(sheets.menu);
-    setupStateSheet_(sheets.state);
-    setupPublicationSheet_(sheets.publication);
-    initializePublicationProperties_();
-    installProjectTriggers_(spreadsheet);
-    renderPublicationDashboard_();
-    spreadsheet.toast("Planilla y triggers preparados.", "Il Figlio", 5);
-    return { ok: true, spreadsheetId: spreadsheet.getId() };
-  });
+  return upgradeSheetExperience();
 }
 
 function configureProject() {
@@ -61,9 +39,15 @@ function validateDraft() {
     var result = readAndValidateDraft_();
     highlightValidationIssues_(result.issues);
     if (result.ok) {
-      setDashboardState_("Borrador válido", "La carta está lista para publicar.");
+      setDashboardState_("Cambios listos", "No encontramos errores. Podés publicar cuando quieras.");
     } else {
-      setDashboardState_("Error de validación", formatIssues_(result.issues));
+      setDashboardState_(
+        "Hay campos para corregir",
+        "Corregí " + result.issues.length + " campo"
+          + (result.issues.length === 1 ? "" : "s") + " marcado"
+          + (result.issues.length === 1 ? "" : "s") + " en rojo:\n"
+          + formatIssues_(result.issues),
+      );
     }
     renderPublicationDashboard_();
     return result;
@@ -201,6 +185,13 @@ function setupPublicationSheet_(sheet) {
 
 function readAndValidateDraft_() {
   var spreadsheet = getProjectSpreadsheet_();
+  var schema = detectSheetSchema_(spreadsheet);
+  if (schema === "v2" || schema === "dual") {
+    return readAndValidateEditorV2Draft_(spreadsheet);
+  }
+  if (schema !== "legacy") {
+    throw new Error("La estructura del editor está incompleta. Ejecutá Preparar editor móvil.");
+  }
   var menuSheet = requiredSheet_(spreadsheet, APP_CONFIG.tabs.menu);
   var stateSheet = requiredSheet_(spreadsheet, APP_CONFIG.tabs.state);
   ensureMissingItemIds_(menuSheet);
@@ -233,18 +224,39 @@ function ensureMissingItemIds_(sheet) {
 
 function highlightValidationIssues_(issues) {
   var spreadsheet = getProjectSpreadsheet_();
-  [APP_CONFIG.tabs.menu, APP_CONFIG.tabs.state].forEach(function (sheetName) {
-    var sheet = requiredSheet_(spreadsheet, sheetName);
-    var columns = sheetName === APP_CONFIG.tabs.menu ? MENU_HEADERS.length : STATE_HEADERS.length;
-    var rows = Math.max(1, sheet.getLastRow() - 1);
-    sheet.getRange(2, 1, rows, columns).setBackground(null).clearNote();
+  var schema = detectSheetSchema_(spreadsheet);
+  var editableNames = schema === "v2" || schema === "dual"
+    ? [APP_CONFIG.editorTabs.local].concat(EDITOR_V2_CATEGORY_DEFINITIONS.map(function (definition) {
+      return definition.sheetName;
+    }))
+    : [APP_CONFIG.tabs.menu, APP_CONFIG.tabs.state];
+  editableNames.forEach(function (sheetName) {
+    var sheet = spreadsheet.getSheetByName(sheetName);
+    if (!sheet) return;
+    var editorDefinition = editorV2CategoryBySheetName_(sheetName);
+    var columns = editorDefinition
+      ? editorV2Headers_(editorDefinition).length
+      : (sheetName === APP_CONFIG.tabs.menu ? MENU_HEADERS.length : STATE_HEADERS.length);
+    var rows = editorDefinition
+      ? Math.max(1, sheet.getMaxRows() - 1)
+      : (sheetName === APP_CONFIG.editorTabs.local
+        ? 2
+        : Math.max(1, sheet.getLastRow() - 1));
+    var editableRange = sheet.getRange(2, 1, rows, columns);
+    editableRange.setBackground(schema === "v2" || schema === "dual" ? "#fff9f7" : null).clearNote();
   });
+  if (schema === "v2" || schema === "dual") {
+    var localSheet = spreadsheet.getSheetByName(APP_CONFIG.editorTabs.local);
+    if (localSheet) localSheet.getRange("B3").setNote("Se muestra al inicio del menú.");
+  }
 
   issues.forEach(function (issue) {
-    requiredSheet_(spreadsheet, issue.sheet)
-      .getRange(issue.row, issue.column)
-      .setBackground("#fce8e6")
-      .setNote(issue.message);
+    var sheet = spreadsheet.getSheetByName(issue.sheet);
+    if (sheet) {
+      sheet.getRange(issue.row, issue.column)
+        .setBackground("#fce8e6")
+        .setNote(issue.message);
+    }
   });
 }
 
@@ -255,10 +267,10 @@ function initializePublicationProperties_() {
     defaults.PUBLISHED_REVISION = "0";
   }
   if (!properties.getProperty(SCRIPT_PROPERTY_KEYS.dashboardStatus)) {
-    defaults.DASHBOARD_STATUS = "Sin publicar";
+    defaults.DASHBOARD_STATUS = "Todavía no publicado";
   }
   if (!properties.getProperty(SCRIPT_PROPERTY_KEYS.dashboardDetail)) {
-    defaults.DASHBOARD_DETAIL = "Configurá Vercel y publicá la primera revisión.";
+    defaults.DASHBOARD_DETAIL = "Prepará la carta y publicá la primera actualización.";
   }
   if (!properties.getProperty(SCRIPT_PROPERTY_KEYS.draftDirty)) {
     defaults.DRAFT_DIRTY = "false";
@@ -268,25 +280,33 @@ function initializePublicationProperties_() {
 
 function renderPublicationDashboard_() {
   var properties = PropertiesService.getScriptProperties();
-  var sheet = requiredSheet_(getProjectSpreadsheet_(), APP_CONFIG.tabs.publication);
+  var surface = getPublicationSurface_(getProjectSpreadsheet_());
+  if (!surface) return;
+  var sheet = surface.sheet;
+  var cells = surface.cells;
   var publishedRevision = properties.getProperty(SCRIPT_PROPERTY_KEYS.publishedRevision) || "0";
   var pendingRevision = properties.getProperty(SCRIPT_PROPERTY_KEYS.pendingRevision) || "—";
 
-  sheet.getRange(PUBLICATION_CELLS.status)
+  sheet.getRange(cells.status)
     .setValue(properties.getProperty(SCRIPT_PROPERTY_KEYS.dashboardStatus) || "Sin publicar");
-  sheet.getRange(PUBLICATION_CELLS.publishedRevision).setValue(Number(publishedRevision));
-  sheet.getRange(PUBLICATION_CELLS.pendingRevision).setValue(pendingRevision);
-  sheet.getRange(PUBLICATION_CELLS.publishedAt)
-    .setValue(properties.getProperty(SCRIPT_PROPERTY_KEYS.publishedAt) || "—");
-  sheet.getRange(PUBLICATION_CELLS.detail)
+  sheet.getRange(cells.publishedRevision).setValue(Number(publishedRevision));
+  sheet.getRange(cells.pendingRevision).setValue(pendingRevision);
+  var publishedAt = properties.getProperty(SCRIPT_PROPERTY_KEYS.publishedAt);
+  var publishedAtRange = sheet.getRange(cells.publishedAt);
+  if (surface.schema === "v2" && publishedAt && !Number.isNaN(Date.parse(publishedAt))) {
+    publishedAtRange.setValue(new Date(publishedAt)).setNumberFormat("dd/MM/yyyy HH:mm");
+  } else {
+    publishedAtRange.setValue(publishedAt || "—");
+  }
+  sheet.getRange(cells.detail)
     .setValue(properties.getProperty(SCRIPT_PROPERTY_KEYS.dashboardDetail) || "");
-  sheet.getRange(PUBLICATION_CELLS.siteUrl)
+  sheet.getRange(cells.siteUrl)
     .setValue(properties.getProperty(SCRIPT_PROPERTY_KEYS.publicSiteUrl) || "");
-  sheet.getRange(PUBLICATION_CELLS.publishedHash)
+  sheet.getRange(cells.publishedHash)
     .setValue(properties.getProperty(SCRIPT_PROPERTY_KEYS.publishedHash) || "");
-  sheet.getRange(PUBLICATION_CELLS.pendingHash)
+  sheet.getRange(cells.pendingHash)
     .setValue(properties.getProperty(SCRIPT_PROPERTY_KEYS.pendingHash) || "");
-  sheet.getRange(PUBLICATION_CELLS.pendingRequestedAt)
+  sheet.getRange(cells.pendingRequestedAt)
     .setValue(properties.getProperty(SCRIPT_PROPERTY_KEYS.pendingRequestedAt) || "");
 }
 
@@ -303,23 +323,23 @@ function markDraftDirty_() {
   var pendingRevision = properties.getProperty(SCRIPT_PROPERTY_KEYS.pendingRevision);
   if (pendingRevision) {
     setDashboardState_(
-      "Revisión " + pendingRevision + " pendiente",
-      "Los cambios nuevos quedan en borrador hasta confirmar esa revisión.",
+      "Publicando…",
+      "La actualización anterior sigue en curso. Los cambios nuevos quedan pendientes.",
     );
   } else {
-    setDashboardState_("Cambios sin publicar", "Validá o publicá la nueva versión de la carta.");
+    setDashboardState_("Hay cambios pendientes", "Cuando termines, abrí Publicar y marcá Publicar cambios.");
   }
   renderPublicationDashboard_();
 }
 
 function formatIssues_(issues) {
   return issues.map(function (issue) {
-    return "• " + issue.path + ": " + issue.message;
+    return "• " + issue.sheet + ", fila " + issue.row + ": " + issue.message;
   }).join("\n");
 }
 
 function installProjectTriggers_(spreadsheet) {
-  var handlerNames = ["handlePublishEdit", "verifyPublishedRevision"];
+  var handlerNames = ["handlePublishEdit", "handleSheetChange", "verifyPublishedRevision"];
   ScriptApp.getProjectTriggers().forEach(function (trigger) {
     if (handlerNames.indexOf(trigger.getHandlerFunction()) !== -1) {
       ScriptApp.deleteTrigger(trigger);
@@ -329,6 +349,10 @@ function installProjectTriggers_(spreadsheet) {
   ScriptApp.newTrigger("handlePublishEdit")
     .forSpreadsheet(spreadsheet)
     .onEdit()
+    .create();
+  ScriptApp.newTrigger("handleSheetChange")
+    .forSpreadsheet(spreadsheet)
+    .onChange()
     .create();
   ScriptApp.newTrigger("verifyPublishedRevision")
     .timeBased()

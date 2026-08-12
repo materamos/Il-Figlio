@@ -3,12 +3,11 @@
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("Il Figlio")
-    .addItem("Preparar planilla", "setupProject")
-    .addItem("Configurar Vercel", "configureProject")
-    .addSeparator()
-    .addItem("Validar borrador", "validateDraft")
+    .addItem("Preparar editor móvil", "upgradeSheetExperience")
+    .addItem("Revisar cambios", "validateDraft")
     .addItem("Publicar cambios", "publishChanges")
-    .addItem("Verificar publicación", "verifyPublishedRevision")
+    .addSeparator()
+    .addItem("Restaurar formato", "restoreEditorFormatting")
     .addToUi();
 }
 

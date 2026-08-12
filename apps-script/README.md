@@ -26,21 +26,25 @@ app serves only the last validated JSON snapshot.
 6. Push the source with `npx clasp push --user ilfiglio` and open it with
    `npx clasp open-script --user ilfiglio`.
 7. Run `setupProject` once from the Apps Script editor and accept its requested
-   permissions. It creates the three tabs, seeds the current 24 products and
-   installs the edit and five-minute verification triggers.
-8. Reload the Sheet, then use `Il Figlio > Configurar Vercel`. Paste the
-   production Deploy Hook and public site URL. The hook is stored only in
-   Script Properties.
+   permissions. It creates the mobile-first editor tabs, seeds the current 24
+   products and installs the edit, structural-change and five-minute verification
+   triggers. On an existing legacy Sheet it creates a private backup, verifies
+   canonical equality and keeps the previous tabs protected and hidden.
+8. Run `configureProject` from the Apps Script editor. Paste the production
+   Deploy Hook and public site URL when prompted. The hook is stored only in
+   Script Properties and is not exposed in the operator-facing Sheet menu.
 9. Create a web-app deployment from the pushed manifest. It must execute as the
    deploying user and allow anonymous access. Record its `/exec` URL as
    `MENU_SNAPSHOT_URL` in Vercel.
 
 ## Publishing contract
 
-- `Carta` holds draft products and prices.
-- `Estado` holds the global `Abierto`, `Cerrado` or `Agotado` state and an
+- `Clásicas`, `Rellenas`, `Gourmet`, `Empanadas` and `Extras` hold products in
+  short, category-specific tables. Row position defines order, `Mostrar` is a
+  checkbox, and the internal ID stays hidden and is repaired automatically.
+- `Local` holds the global `Abierto`, `Cerrado` or `Agotado` state and an
   optional 160-character message.
-- Setting `Publicacion!B2` to true publishes from desktop or mobile.
+- Setting `Publicar!B2` to true publishes from desktop or mobile.
 - A second publication cannot replace the fixed snapshot URL while another
   revision is pending. Rechecking `B2` retries that same revision; newer sheet
   edits remain a draft until `/publication.json` confirms the pending revision

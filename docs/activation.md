@@ -39,12 +39,15 @@ npm run apps-script:push
 npm run apps-script:open
 ```
 
-Después del primer push, ejecuta `setupProject` una vez desde el editor de Apps Script. Esta función:
+Después del primer push, ejecuta `setupProject` una vez desde el editor de Apps Script. En una instalación existente, `upgradeSheetExperience` realiza la misma preparación. Estas funciones:
 
-- crea o normaliza `Carta`, `Estado` y `Publicacion`;
-- instala el trigger de publicación por edición;
-- instala el verificador periódico;
-- solicita los permisos mínimos necesarios.
+- crean el editor móvil `Publicar`, `Local`, `Clásicas`, `Rellenas`, `Gourmet`, `Empanadas` y `Extras`;
+- migran el esquema anterior únicamente después de guardar un respaldo privado y comprobar que la carta resultante sea idéntica;
+- conservan las pestañas anteriores protegidas y ocultas como recuperación;
+- instalan el trigger de publicación por edición;
+- instalan el trigger que detecta altas, bajas y movimientos de filas;
+- instalan el verificador periódico;
+- solicitan los permisos mínimos necesarios.
 
 El archivo de snapshot se crea en Drive al preparar la primera publicación válida.
 La copia servida por el web app se guarda fragmentada en Script Properties para
@@ -52,13 +55,14 @@ evitar lecturas vacías inmediatamente después de escribir en Drive.
 
 ## 4. Configuración privada
 
-En Apps Script, define estas Script Properties:
+Ejecuta `configureProject` desde el editor de Apps Script para definir estas Script Properties privadas:
 
 | Propiedad | Valor |
 | --- | --- |
 | `VERCEL_DEPLOY_HOOK_URL` | Hook asociado a la rama productiva. |
 | `PUBLIC_SITE_URL` | Origen del sitio, por ejemplo `https://il-figlio.vercel.app`, sin ruta. |
-| `SNAPSHOT_FILE_ID` | Creada automáticamente durante la primera publicación válida. |
+
+`SNAPSHOT_FILE_ID` es una propiedad interna creada automáticamente durante la primera publicación válida. No la definas manualmente.
 
 El hook nunca se escribe en una celda ni se devuelve desde `doGet`.
 
@@ -102,12 +106,12 @@ Crea un único Deploy Hook para la rama productiva y guárdalo en `VERCEL_DEPLOY
 
 ## 7. Prueba completa
 
-1. Cambiar un precio en `Carta`.
-2. Activar `Publicar cambios` en `Publicacion!B2`.
-3. Confirmar que la planilla muestra una revisión pendiente.
+1. Cambiar un precio en una pestaña de categoría.
+2. Activar `Publicar cambios` en `Publicar!B2`.
+3. Confirmar que la planilla muestra `Publicando…`.
 4. Esperar un deployment Vercel `READY`.
 5. Abrir `/publication.json` y comprobar revisión y hash.
-6. Confirmar que la planilla cambia a `Publicado`.
+6. Confirmar que la planilla cambia a `Menú actualizado`.
 7. Verificar `/` y `/carta/` en escritorio y móvil.
 8. Repetir con `Cerrado` y `Agotado`.
 9. Probar una fila inválida y confirmar que no dispara un deploy.

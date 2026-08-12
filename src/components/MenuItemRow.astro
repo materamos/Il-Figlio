@@ -23,7 +23,7 @@ const currency = new Intl.NumberFormat("es-AR", {
   <dl class="menu-item__prices price-figures" aria-label={`Precios de ${item.name}`}>
     {item.prices.map((price) => (
       <div class="menu-item__price">
-        <dt class="sr-only">{priceKindLabels[price.kind]}</dt>
+        <dt class="sr-only menu-item__price-label">{priceKindLabels[price.kind]}</dt>
         <dd>{currency.format(price.amount)}</dd>
       </div>
     ))}

@@ -40,7 +40,6 @@
 }
 
 html {
-  min-width: 20rem;
   scroll-behavior: smooth;
   scroll-padding-top: 5.5rem;
   background: var(--color-canvas);
@@ -214,6 +213,7 @@ h3 {
   display: flex;
   width: min(100% - 2rem, 70rem);
   min-height: 4.75rem;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
@@ -223,6 +223,8 @@ h3 {
 
 .site-header__brand {
   display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
   align-items: center;
   gap: var(--space-3);
   text-decoration: none;
@@ -234,6 +236,7 @@ h3 {
 }
 
 .site-header__name {
+  min-width: 0;
   color: var(--color-brand);
   font-family: var(--font-display);
   font-size: 1.35rem;
@@ -246,11 +249,24 @@ h3 {
   display: inline-flex;
   min-height: 2.75rem;
   align-items: center;
+  margin-inline-start: auto;
   padding-inline: var(--space-3);
   color: var(--color-action);
   font-size: 0.875rem;
   font-weight: 700;
   text-decoration: none;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.site-header__contact:hover,
+.site-header__contact:focus-visible {
+  color: var(--color-action-hover);
+}
+
+.site-header__contact:active {
+  background: var(--color-surface);
 }
 
 .hero {
@@ -389,12 +405,36 @@ h3 {
   list-style: none;
 }
 
-.contact-list a,
-.contact-list span {
-  display: inline-flex;
+.contact-list a {
+  display: flex;
+  width: 100%;
   min-height: 2.75rem;
   align-items: center;
   gap: var(--space-3);
+  border-radius: var(--radius-control);
+  text-decoration-color: transparent;
+  transition:
+    color var(--transition-fast),
+    text-decoration-color var(--transition-fast);
+}
+
+.contact-list a:hover,
+.contact-list a:focus-visible {
+  color: var(--color-action);
+  text-decoration-color: currentColor;
+}
+
+.contact-list a:active {
+  color: var(--color-action-hover);
+  text-decoration-color: currentColor;
+}
+
+.contact-list span {
+  min-width: 0;
+}
+
+.contact-list svg {
+  flex: 0 0 auto;
 }
 
 @media (min-width: 48rem) {
@@ -415,7 +455,7 @@ h3 {
   }
 }
 
-@media (max-width: 24rem) {
+@media (max-width: 22rem) {
   .site-header__name {
     display: none;
   }
