@@ -64,6 +64,7 @@ test("the not-found route keeps the branded recovery path minimal", async () => 
   assert.match(notFound, /aria-label="Il Figlio, volver al inicio"/);
   assert.match(notFound, /class="not-found__number" aria-hidden="true">404<\/p>/);
   assert.doesNotMatch(notFound, /class="not-found__mark"/);
+  assert.doesNotMatch(notFound, /not-found-header__location/);
   assert.match(notFound, /<p>Lanús Oeste<\/p>/);
   assert.match(notFound, /href="\/carta\/">Ver la carta/);
   assert.doesNotMatch(notFound, /<style>/);
