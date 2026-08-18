@@ -519,7 +519,7 @@ h3 {
 
   .contact-section__inner {
     grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.8fr);
-    align-items: end;
+    align-items: center;
   }
 
   .hero__actions .button {
