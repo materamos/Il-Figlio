@@ -43,7 +43,7 @@ const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComp
 
     <section class="hero" id="inicio" aria-labelledby="hero-title">
       <div class="hero__copy">
-        <p class="hero__eyebrow">Pizzería de barrio · Lanús Oeste</p>
+        <p class="hero__eyebrow">Lanús Oeste</p>
         <h1 class="hero__title" id="hero-title">Il Figlio</h1>
         <p class="hero__lede">{ilFiglioBusiness.description}</p>
       </div>
@@ -61,7 +61,13 @@ const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComp
           rel="noopener noreferrer"
         >
           <WhatsAppIcon />
-          <span>{isAcceptingOrders ? "Pedir por WhatsApp" : "Consultar por WhatsApp"}</span>
+          <span
+            >{
+              isAcceptingOrders
+                ? "Pedir por WhatsApp"
+                : "Consultar por WhatsApp"
+            }</span
+          >
         </a>
         <a class="button button--secondary" href="/carta/">Ver la carta</a>
       </div>
@@ -71,7 +77,9 @@ const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComp
       <div class="contact-section__inner">
         <div>
           <p class="section-eyebrow">Contacto</p>
-          <h2 class="contact-section__title" id="contact-title">Tu próxima pizza empieza acá.</h2>
+          <h2 class="contact-section__title" id="contact-title">
+            Hacé tu pedido.
+          </h2>
         </div>
 
         <ul class="contact-list">
@@ -109,5 +117,6 @@ const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComp
     </footer>
   </main>
 
-  <script is:inline type="module" src="/scripts/legacy-carta-redirect.js"></script>
+  <script is:inline type="module" src="/scripts/legacy-carta-redirect.js"
+  ></script>
 </BaseLayout>
